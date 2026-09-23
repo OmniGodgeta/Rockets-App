@@ -1,0 +1,28 @@
+name: rockets
+description: A Flutter app for tracking rocket launches
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0
+  url_launcher: ^6.1.14
+  intl: ^0.19.0
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  # The "flutter_lints" package below contains a set of recommended lints.
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
