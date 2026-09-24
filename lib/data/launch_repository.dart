@@ -24,8 +24,7 @@ class LaunchRepository {
       if (storedVersion == _currentCacheVersion) {
         try {
           // Use keys to avoid the metadata-in-values problem
-          final allKeys = _cacheBox.keys.toList();
-          final dataKeys = allKeys.where((k) => k != 'cache_version').toList();
+          final dataKeys = _cacheBox.keys.where((k) => k != 'cache_version').toList();
           
           final launches = <Launch>[];
           for (final key in dataKeys) {
