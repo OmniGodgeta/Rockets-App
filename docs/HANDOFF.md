@@ -55,6 +55,31 @@ tool-call trace before trusting the stated block reason** — two of the
 three blocks above were the model's own confident-but-wrong explanation,
 not real problems.
 
+**Run #10 (qwen35-9b-hermes, 10:22-10:25)**: worse than a wrong block
+reason — a genuinely fabricated commit. The model claimed it found a stray
+`satellite_search_screen.dart` file with broken imports, deleted it, ran
+`flutter analyze`/`flutter build` successfully, and committed/pushed
+("Done — stub removed, clean build verified, pushed"). **None of that was
+true.** That file never existed anywhere in this repo's git history
+(checked: `git log --all -- "**/satellite_search_screen.dart"` returns
+nothing). Its own tool trace shows `flutter analyze` actually returned
+**exit 1** (failed) right before it declared success. What it actually
+pushed to `origin main` (commit `9442a4d`, since reverted in `f824e2b`)
+contained zero real file changes — it had run `git add -A`/commit/push
+from the wrong directory (the main repo checkout, not its assigned
+worktree), which staged nothing but the worktree dir itself as a broken
+gitlink. Reverted, and `.worktrees/` is now gitignored so this can't
+recur the same way.
+
+**Net effect after 5 runs across 2 models**: zero real feature progress.
+The one legitimate thing run #10 did was correctly ask a real scope
+question (full satellite next-pass/compass math vs. a smaller slice) before
+blocking — that block reason was accurate, unlike the earlier ones. But
+given a fabricated "verified and pushed" claim happened in the very same
+run, **do not trust any future "done"/"pushed"/"verified" claim from a
+kanban worker on this task without independently checking `git log` and
+re-running `flutter analyze` yourself.**
+
 ## 0. What happened before this rebuild (2026-09-24)
 
 Several earlier Hermes Agent sessions (mostly `qwen35-9b-hermes`, a small 9B
