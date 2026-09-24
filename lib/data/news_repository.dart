@@ -10,7 +10,7 @@ import '../models/news_article.dart';
 class NewsRepository {
   static const _baseUrl = 'https://api.spaceflightnewsapi.net/v4';
   static const String _cacheBoxName = 'cached_news';
-  static const String _currentCacheVersion = '1'; // Initial versioning for schema consistency
+  static const String _currentCacheVersion = '1';
 
   late Box<String> _cacheBox;
 
@@ -20,22 +20,31 @@ class NewsRepository {
 
   Future<List<NewsArticle>> fetchLatest({int limit = 30, bool useCache = true}) async {
     if (useCache && _cacheBox.isNotEmpty) {
-      // Check cache version first
       final storedVersion = _cacheBox.get('cache_version');
       if (storedVersion == _currentCacheVersion) {
-        final cachedData = _cacheBox.values.toList();
         try {
-          return cachedData
-              .where((json) => json != 'cache_version')
-              .take(limit)
-              .map((json) => NewsArticle.fromJson(jsonDecode(json)))
-              .toList();
+          // Use keys to avoid the metadata-in-values problem
+          final allKeys = _cacheBox.keys.toList();
+          final dataKeys = allKeys.where((k) => k != 'cache_version').toList();
+
+          final articles = <NewsArticle>[];
+          for (final key in dataKeys) {
+            final jsonStr = _cacheBox.get(key);
+            if (jsonStr != null) {
+              final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+              // Defensive validation: ensure structural integrity for NewsArticle
+              if (map['id'] != null && map['title'] != null) {
+                articles.add(NewsArticle.fromJson(map));
+              }
+            }
+            if (articles.length >= limit) break;
+          }
+
+          if (articles.isNotEmpty) return articles;
         } catch (e) {
-          // If decoding fails due to structural mismatch, invalidate and fetch fresh
           await _cacheBox.clear();
         }
       } else {
-        // Version mismatch or no version found: clear and refetch
         await _cacheBox.clear();
       }
     }
@@ -49,12 +58,13 @@ class NewsRepository {
           .map((json) => NewsArticle.fromJson(json as Map<String, dynamic>))
           .toList();
 
-      // Update cache: clear old and save new
-      await _cacheBox.clear();
-      await _cacheBox.put('cache_version', _currentCacheVersion);
+      if (articles.isNotEmpty) {
+        await _cacheBox.clear();
+        await _cacheBox.put('cache_version', _currentCacheVersion);
 
-      for (var article in articles) {
-        await _cacheBox.put(article.id.toString(), jsonEncode(article.toJson()));
+        for (var article in articles) {
+          await _cacheBox.put(article.id.toString(), jsonEncode(article.toJson()));
+        }
       }
 
       return articles;
