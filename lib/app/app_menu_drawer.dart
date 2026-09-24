@@ -6,6 +6,7 @@ import '../../features/about/about_screen.dart';
 import '../../features/aurora/aurora_screen.dart';
 import '../../features/rockets/rockets_screen.dart';
 import '../../features/rocket_scale/rocket_scale_screen.dart';
+import '../../features/scale/scale_screen.dart';
 import '../../features/satellites/satellites_screen.dart';
 import '../../features/satellites/iss_tracker_screen.dart';
 import '../../features/solar_system/solar_system_screen.dart';
@@ -109,6 +110,20 @@ class AppMenuDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const RocketScaleScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.zoom_out_map, color: AppTheme.textPrimary),
+              title: const Text(
+                'Scale of the Universe',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ScaleScreen()),
                 );
               },
             ),
