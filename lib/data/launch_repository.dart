@@ -9,6 +9,7 @@ import '../models/launch.dart';
 class LaunchRepository {
   static const _baseUrl = 'https://ll.thespacedevs.com/2.2.0';
   static const String _cacheBoxName = 'cached_launches';
+  static const String _currentCacheVersion = '2'; // Using String for Hive compatibility
 
   late Box<String> _cacheBox;
 
@@ -18,8 +19,25 @@ class LaunchRepository {
 
   Future<List<Launch>> fetchUpcoming({int limit = 30, bool useCache = true}) async {
     if (useCache && _cacheBox.isNotEmpty) {
-      final cachedData = _cacheBox.values.toList();
-      return cachedData.take(limit).map((json) => Launch.fromJson(jsonDecode(json))).toList();
+      // Check cache version first
+      final storedVersion = _cacheBox.get('cache_version');
+      if (storedVersion == _currentCacheVersion) {
+        final cachedData = _cacheBox.values.toList();
+        try {
+          // IMPORTANT: Filter out 'cache_version' which is an entry in the box
+          return cachedData
+              .where((json) => json != 'cache_version')
+              .take(limit)
+              .map((json) => Launch.fromJson(jsonDecode(json)))
+              .toList();
+        } catch (e) {
+          // If decoding fails due to structural mismatch, invalidate and fetch fresh
+          await _cacheBox.clear();
+        }
+      } else {
+        // Version mismatch or no version found: clear and refetch
+        await _cacheBox.clear();
+      }
     }
 
     final uri = Uri.parse('$_baseUrl/launch/upcoming/?limit=$limit');
@@ -32,10 +50,16 @@ class LaunchRepository {
 
     // Update cache with raw JSON objects from the API so they remain compatible with Launch.fromJson()
     await _cacheBox.clear();
+    await _cacheBox.put('cache_version', _currentCacheVersion);
+
     for (var result in results) {
       final map = result as Map<String, dynamic>;
       final id = map['id'] as String;
-      await _cacheBox.put(id, jsonEncode(result));
+      
+      // Defensive validation: Ensure critical nested keys exist before caching/using
+      if (map['rocket'] != null && map['pad'] != null && map['mission'] != null) {
+        await _cacheBox.put(id, jsonEncode(result));
+      }
     }
 
     final launches = results
