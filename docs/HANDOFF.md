@@ -2,6 +2,59 @@
 
 **Read this first if you're picking up work on this app.**
 
+## 0.-1. Overnight kanban task troubleshooting (2026-09-24, task `t_dfd738b5`)
+
+The v3.0.0 foundation rebuild below (§0-§4) shipped clean. What follows is
+what happened trying to get an unattended overnight Hermes kanban task
+(`t_dfd738b5`, branch `wt/overnight-continue`) to actually continue it per
+§4's next-steps list — for whoever looks at run history and wonders why
+there's a gap between `5dd75d5` and whatever the next real commit turns out
+to be.
+
+**Runs #6-8, all on `devstral-hermes`, all blocked, zero commits produced:**
+- **#6** (00:25-00:52): blocked claiming "Flutter SDK is not installed."
+  Real cause: `hermes-gateway.service` (which spawns kanban workers) runs
+  as a systemd unit with its own hardcoded `PATH` that never included
+  `~/development/flutter/bin` — nothing to do with this repo. Fixed at the
+  Hermes-install level; full details in `~/.hermes/TROUBLESHOOTING.md` §3.
+- **#7** (09:08-09:20): blocked claiming "HANDOFF.md file is missing from
+  the docs directory." False — this file was present the whole time
+  (confirmed via direct `ls`/`git status` on the worktree, working tree
+  clean). Real cause, found by reading `hermes kanban log t_dfd738b5
+  --tail 8000`: the model read this file's first 20 lines fine via
+  `docs/HANDOFF.md`, then on the next paginated read call dropped the
+  `docs/` prefix, got a "file not found" tool error on plain `HANDOFF.md`,
+  and immediately declared the file missing and blocked rather than
+  retrying with the correct path.
+- **#8** (09:36-09:39): blocked after making **zero tool calls** — the
+  model responded like a bare chatbot ("I don't have access to the system
+  directly to view or manage tasks... could you provide the details?") and
+  the goal-mode judge blocked it for not understanding the goal. Same
+  toolset was available as run #7. Root cause found: `devstral-hermes`'s
+  Modelfile only overrode `num_ctx`, so it had silently inherited the base
+  `devstral:24b` tag's factory SYSTEM prompt, which identifies the model as
+  running under Mistral's **OpenHands** scaffold with OpenHands' own tools
+  — not Hermes's. Fixed by rebuilding `devstral-hermes` with a proper
+  Hermes-specific agentic SYSTEM prompt (source kept at
+  `~/.hermes/Modelfiles/devstral-hermes.Modelfile`). Full details in
+  `~/.hermes/TROUBLESHOOTING.md` §1.
+
+**Run #9/#10 onward**: task's model override switched to
+`qwen35-9b-hermes:latest` (`hermes kanban set-model t_dfd738b5
+qwen35-9b-hermes:latest --provider custom`) — the model already verified
+this session for correct tool-calling and hardened with a
+verification-first SYSTEM prompt (see `~/.hermes/Modelfiles/qwen35-9b-hermes.Modelfile`).
+Check `hermes kanban show t_dfd738b5` and `git log --oneline -5` on
+`wt/overnight-continue` for what actually landed after this point — don't
+assume it's still stuck; check current state fresh rather than trusting
+this note past its own timestamp.
+
+If you're a future agent picking this task back up and it's blocked again:
+**pull `hermes kanban log t_dfd738b5 --tail 8000` and read the real
+tool-call trace before trusting the stated block reason** — two of the
+three blocks above were the model's own confident-but-wrong explanation,
+not real problems.
+
 ## 0. What happened before this rebuild (2026-09-24)
 
 Several earlier Hermes Agent sessions (mostly `qwen35-9b-hermes`, a small 9B
