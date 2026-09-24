@@ -64,7 +64,7 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
             onPressed: !_favoritesReady
                 ? null
                 : () async {
-                    await _favoriteRepository.toggleLaunchFavorite(launch.id);
+                    await _favoriteRepository.toggleLaunchFavorite(launch.id, launch);
                     if (mounted) setState(() {});
                   },
           ),
