@@ -29,15 +29,18 @@ class LaunchRepository {
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final results = body['results'] as List<dynamic>? ?? [];
+
+    // Update cache with raw JSON objects from the API so they remain compatible with Launch.fromJson()
+    await _cacheBox.clear();
+    for (var result in results) {
+      final map = result as Map<String, dynamic>;
+      final id = map['id'] as String;
+      await _cacheBox.put(id, jsonEncode(result));
+    }
+
     final launches = results
         .map((json) => Launch.fromJson(json as Map<String, dynamic>))
         .toList();
-
-    // Update cache: clear old and save new
-    await _cacheBox.clear();
-    for (var launch in launches) {
-      await _cacheBox.put(launch.id.toString(), jsonEncode(launch.toJson()));
-    }
 
     return launches;
   }

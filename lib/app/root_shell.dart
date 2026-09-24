@@ -25,16 +25,13 @@ class _RootShellState extends State<RootShell> {
     SatellitesScreen(),
     SolarSystemScreen(),
     GalaxyScreen(),
-    NewsScreen(),
     UniverseScreen(),
+    NewsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Build only the active tab: the Satellites/Solar System tabs load a
-      // full webview, and eagerly building all 4 at once (IndexedStack)
-      // wastes network/JS engine resources for tabs the user hasn't opened.
       body: _screens[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
@@ -42,11 +39,11 @@ class _RootShellState extends State<RootShell> {
         onDestinationSelected: (value) => setState(() => _index = value),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.rocket_launch_outlined), selectedIcon: Icon(Icons.rocket_launch), label: 'ROCKETS'),
-          NavigationDestination(icon: Icon(Icons.satellite_alt_outlined), selectedIcon: Icon(Icons.satellite_alt), label: 'SATELLITES'),
-          NavigationDestination(icon: Icon(Icons.public_outlined), selectedIcon: Icon(Icons.public), label: 'SOLAR SYSTEM'),
+          NavigationDestination(icon: Icon(Icons.satellite_alt_outlined), selectedIcon: Icon(Icons.satellite_alt), label: 'SATS'),
+          NavigationDestination(icon: Icon(Icons.public_outlined), selectedIcon: Icon(Icons.public), label: 'SOL'),
           NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), selectedIcon: Icon(Icons.auto_awesome), label: 'GALAXY'),
-          NavigationDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: 'NEWS'),
           NavigationDestination(icon: Icon(Icons.scatter_plot_outlined), selectedIcon: Icon(Icons.scatter_plot), label: 'UNIVERSE'),
+          NavigationDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: 'NEWS'),
         ],
       ),
     );

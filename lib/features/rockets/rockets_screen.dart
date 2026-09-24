@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -168,8 +169,69 @@ class _LaunchCard extends StatelessWidget {
                 ),
               ),
             ),
+            _CountdownTicker(net: launch.net),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CountdownTicker extends StatefulWidget {
+  const _CountdownTicker({required this.net});
+
+  final DateTime net;
+
+  @override
+  State<_CountdownTicker> createState() => _CountdownTickerState();
+}
+
+class _CountdownTickerState extends State<_CountdownTicker> {
+  late Timer _timer;
+  late String _countdownText;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateCountdown();
+    _timer = Timer.periodic(const Duration(minutes: 1), (_) => _updateCountdown());
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _updateCountdown() {
+    if (!mounted) return;
+    final now = DateTime.now();
+    final diff = widget.net.difference(now);
+
+    setState(() {
+      if (diff.isNegative) {
+        _countdownText = 'LAUNCHED';
+      } else {
+        final days = diff.inDays;
+        final hours = diff.inHours % 24;
+        final minutes = diff.inMinutes % 60;
+
+        if (days > 0) {
+          _countdownText = 'T-${days}d ${hours}h';
+        } else {
+          _countdownText = 'T-${hours}h ${minutes}m';
+        }
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Text(
+        _countdownText,
+        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );
   }
