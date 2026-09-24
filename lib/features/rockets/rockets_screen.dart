@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
+import '../../data/favorite_repository.dart';
 import '../../data/launch_repository.dart';
 import '../../models/launch.dart';
 import 'launch_detail_screen.dart';
+import '../favorites/favorites_screen.dart';
 
-/// "Rockets" tab: scrollable feed of upcoming launches worldwide, similar in
+/// "Rockets" tab: scrollable feed of upcoming launches worldwide, similar in 
 /// spirit to SpaceLaunchNow. Tap a launch for detail + livestream link.
 class RocketsScreen extends StatefulWidget {
   const RocketsScreen({super.key});
@@ -18,12 +20,25 @@ class RocketsScreen extends StatefulWidget {
 
 class _RocketsScreenState extends State<RocketsScreen> {
   final _repository = LaunchRepository();
+  final _favoriteRepository = FavoriteRepository();
   late Future<List<Launch>> _launchesFuture;
+  bool _favoritesInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _launchesFuture = _repository.init().then((_) => _repository.fetchUpcoming());
+    _initializeRepositories();
+  }
+
+  Future<void> _initializeRepositories() async {
+    await _repository.init();
+    await _favoriteRepository.init();
+    if (mounted) {
+      setState(() {
+        _favoritesInitialized = true;
+        _launchesFuture = _repository.fetchUpcoming();
+      });
+    }
   }
 
   Future<void> _refresh() async {
@@ -36,7 +51,18 @@ class _RocketsScreenState extends State<RocketsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ROCKETS')),
+      appBar: AppBar(
+        title: const Text('ROCKETS'),
+        actions: [
+          if (_favoritesInitialized)
+            IconButton(
+              icon: const Icon(Icons.star),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+              ),
+            ),
+        ],
+      ),
       body: FutureBuilder<List<Launch>>(
         future: _launchesFuture,
         builder: (context, snapshot) {

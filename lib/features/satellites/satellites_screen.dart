@@ -7,6 +7,7 @@ import 'package:flutter_compass/flutter_compass.dart';
 import '../../app/theme.dart';
 import 'satellite_detail_sheet.dart';
 import '../../data/satellite_repository.dart';
+import '../favorites/favorites_screen.dart';
 import '../../models/satellite_model.dart';
 import '../../utils/orbit_utils.dart';
 
@@ -163,6 +164,14 @@ class _SatellitesScreenState extends State<SatellitesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SATELLITES'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.star),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(64),
           child: Padding(

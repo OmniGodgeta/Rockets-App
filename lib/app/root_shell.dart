@@ -5,10 +5,11 @@ import '../features/news/news_screen.dart';
 import '../features/rockets/rockets_screen.dart';
 import '../features/satellites/satellites_screen.dart';
 import '../features/solar_system/solar_system_screen.dart';
+import '../features/universe/universe_screen.dart';
 import 'theme.dart';
 
 /// The app's sections, each a button at the bottom of the app: Rockets,
-/// Satellites, Solar System, Galaxy, News.
+/// Satellites, Solar System, Galaxy, News, Universe.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
@@ -25,6 +26,7 @@ class _RootShellState extends State<RootShell> {
     SolarSystemScreen(),
     GalaxyScreen(),
     NewsScreen(),
+    UniverseScreen(),
   ];
 
   @override
@@ -44,6 +46,7 @@ class _RootShellState extends State<RootShell> {
           NavigationDestination(icon: Icon(Icons.public_outlined), selectedIcon: Icon(Icons.public), label: 'SOLAR SYSTEM'),
           NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), selectedIcon: Icon(Icons.auto_awesome), label: 'GALAXY'),
           NavigationDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: 'NEWS'),
+          NavigationDestination(icon: Icon(Icons.scatter_plot_outlined), selectedIcon: Icon(Icons.scatter_plot), label: 'UNIVERSE'),
         ],
       ),
     );
