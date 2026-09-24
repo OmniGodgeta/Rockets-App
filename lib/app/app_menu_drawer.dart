@@ -5,6 +5,7 @@ import '../../features/radar/radar_screen.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/aurora/aurora_screen.dart';
 import '../../features/rockets/rockets_screen.dart';
+import '../../features/rocket_scale/rocket_scale_screen.dart';
 import '../../features/satellites/satellites_screen.dart';
 import '../../features/satellites/iss_tracker_screen.dart';
 import '../../features/solar_system/solar_system_screen.dart';
@@ -94,6 +95,20 @@ class AppMenuDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const RocketsScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.straighten, color: AppTheme.textPrimary),
+              title: const Text(
+                'Rocket Scales',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RocketScaleScreen()),
                 );
               },
             ),
