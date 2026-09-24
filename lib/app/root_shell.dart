@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../features/galaxy/galaxy_screen.dart';
 import '../features/news/news_screen.dart';
 import '../features/rockets/rockets_screen.dart';
 import '../features/satellites/satellites_screen.dart';
 import '../features/solar_system/solar_system_screen.dart';
 import 'theme.dart';
 
-/// The app's 4 sections, each a button at the bottom of the app, per the
-/// operator's own spec: Rockets, Satellites, Solar System, News.
+/// The app's sections, each a button at the bottom of the app: Rockets,
+/// Satellites, Solar System, Galaxy, News.
 class RootShell extends StatefulWidget {
   const RootShell({super.key});
 
@@ -22,6 +23,7 @@ class _RootShellState extends State<RootShell> {
     RocketsScreen(),
     SatellitesScreen(),
     SolarSystemScreen(),
+    GalaxyScreen(),
     NewsScreen(),
   ];
 
@@ -40,6 +42,7 @@ class _RootShellState extends State<RootShell> {
           NavigationDestination(icon: Icon(Icons.rocket_launch_outlined), selectedIcon: Icon(Icons.rocket_launch), label: 'ROCKETS'),
           NavigationDestination(icon: Icon(Icons.satellite_alt_outlined), selectedIcon: Icon(Icons.satellite_alt), label: 'SATELLITES'),
           NavigationDestination(icon: Icon(Icons.public_outlined), selectedIcon: Icon(Icons.public), label: 'SOLAR SYSTEM'),
+          NavigationDestination(icon: Icon(Icons.auto_awesome_outlined), selectedIcon: Icon(Icons.auto_awesome), label: 'GALAXY'),
           NavigationDestination(icon: Icon(Icons.newspaper_outlined), selectedIcon: Icon(Icons.newspaper), label: 'NEWS'),
         ],
       ),
