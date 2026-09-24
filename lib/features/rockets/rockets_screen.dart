@@ -137,7 +137,11 @@ class _LaunchCard extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: launch.imageUrl!,
                   fit: BoxFit.cover,
-                  errorWidget: (context, url, error) => const ColoredBox(color: AppTheme.surfaceBorder),
+                  placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppTheme.surfaceBorder,
+                    child: const Icon(Icons.rocket_launch, color: AppTheme.textSecondary, size: 32),
+                  ),
                 ),
               ),
             Expanded(
