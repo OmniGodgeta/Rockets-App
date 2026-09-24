@@ -1,17 +1,22 @@
-# rockets
+# Rockets
 
-A new Flutter project.
+A worldwide rocket launch tracker, satellite tracker, solar system explorer,
+and space news app for Android.
 
-## Getting Started
+**Picking up work on this? Read [`docs/HANDOFF.md`](docs/HANDOFF.md) first** —
+it has the full feature spec, current state, and what's built vs. still
+needed.
 
-This project is a starting point for a Flutter application.
+## Run it
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Sections
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **Rockets** — upcoming launches worldwide, live from the Launch Library 2 API
+- **Satellites** — Starlink-map-style live orbit view
+- **Solar System** — NASA's Eyes on the Solar System
+- **News** — rocket/space/satellite news, live from the Spaceflight News API
