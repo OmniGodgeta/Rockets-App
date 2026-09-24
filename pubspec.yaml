@@ -1,28 +1,68 @@
+
 name: rockets
-description: A Flutter app for tracking rocket launches
+description: A comprehensive rocket launch tracking app with worldwide coverage and video streaming
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.0.0+1
 
 environment:
-  sdk: ^3.13.2
+  sdk: ^3.5.0
 
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.1.0
-  url_launcher: ^6.1.14
+  
+  # State Management
+  flutter_bloc: ^8.1.3
+  flutter_bloc: ^8.1.3
+  bloc: ^8.1.2
+  
+  # HTTP & Async
+  http: ^1.2.0
+  dio: ^5.4.0
+  
+  # Internationalization
   intl: ^0.19.0
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
+  
+  # Local Storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+  
+  # Maps & Location
+  google_maps_flutter: ^2.5.0
+  geolocator: ^10.1.0
+  
+  # Video Streaming
+  youtube_player_flutter: ^8.1.2
+  player: ^2.3.0
+  
+  # URL Loading
+  url_launcher: ^6.2.4
+  
+  # Cached Images
+  cached_network_image: ^3.3.1
+  
+  # Icons
+  flutter_iconly: ^0.32.0
+  cupertino_icons: ^1.0.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   
-  # The "flutter_lints" package below contains a set of recommended lints.
-  flutter_lints: ^6.0.0
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.5
+  hive_generator: ^2.0.1
+  bloc_gen: ^8.0.0
+  json_serializable: ^6.7.1
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Roboto-Black.ttf
+          weight: 900
