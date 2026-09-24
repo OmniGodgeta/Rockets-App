@@ -12,9 +12,13 @@ import '../../features/galaxy/galaxy_screen.dart';
 import '../../features/universe/universe_screen.dart';
 import '../../features/news/news_screen.dart';
 import '../../features/apod/apod_screen.dart';
+import '../../features/settings/settings_screen.dart';
+import '../../data/settings_repository.dart';
 
 class AppMenuDrawer extends StatelessWidget {
-  const AppMenuDrawer({super.key});
+  final SettingsRepository settingsRepository;
+
+  const AppMenuDrawer({super.key, required this.settingsRepository});
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +40,20 @@ class AppMenuDrawer extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined, color: AppTheme.textPrimary),
+              title: const Text(
+                'Settings',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SettingsScreen(settingsRepository: settingsRepository)),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.radar, color: AppTheme.textPrimary),

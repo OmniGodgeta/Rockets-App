@@ -8,11 +8,12 @@ import '../../features/galaxy/galaxy_screen.dart';
 import '../../features/universe/universe_screen.dart';
 import '../../features/news/news_screen.dart';
 import 'app_menu_drawer.dart';
+import '../../data/settings_repository.dart';
 
-/// The app's sections, each a button at the bottom of the app: Rockets,
-/// Satellites, Solar System, Galaxy, News, Universe.
 class RootShell extends StatefulWidget {
-  const RootShell({super.key});
+  final SettingsRepository settingsRepository;
+
+  const RootShell({super.key, required this.settingsRepository});
 
   @override
   State<RootShell> createState() => _RootShellState();
@@ -41,7 +42,7 @@ class _RootShellState extends State<RootShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      drawer: const AppMenuDrawer(),
+      drawer: AppMenuDrawer(settingsRepository: widget.settingsRepository),
       body: _screens[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,

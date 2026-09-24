@@ -3,6 +3,7 @@ import '../../models/satellite_model.dart';
 import '../../utils/orbit_utils.dart';
 import '../../app/theme.dart';
 import '../../data/favorite_repository.dart';
+import '../../data/settings_repository.dart';
 
 class SatelliteDetailSheet extends StatefulWidget {
   final Satellite satellite;
@@ -24,14 +25,24 @@ class SatelliteDetailSheet extends StatefulWidget {
 
 class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
   late final FavoriteRepository _favoriteRepository;
+  late final SettingsRepository _settingsRepository;
   bool _favoritesReady = false;
+  bool _settingsReady = false;
 
   @override
   void initState() {
     super.initState();
     _favoriteRepository = FavoriteRepository();
-    _favoriteRepository.init().then((_) {
-      if (mounted) setState(() => _favoritesReady = true);
+    _settingsRepository = SettingsRepository();
+    
+    Future.wait([
+      _favoriteRepository.init(),
+      _settingsRepository.init(),
+    ]).then((_) {
+      if (mounted) setState(() {
+        _favoritesReady = true;
+        _settingsReady = true;
+      });
     });
   }
 
@@ -40,6 +51,7 @@ class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
     final textTheme = Theme.of(context).textTheme;
     final isFavorite = _favoritesReady &&
         _favoriteRepository.isSatelliteFavorite(widget.satellite.noradId);
+    final useMetric = _settingsReady && _settingsRepository.useMetric;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -65,7 +77,7 @@ class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
             style: textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondary),
           ),
           const Divider(height: 32, color: AppTheme.surfaceBorder),
-          _buildInfoRow(context, 'Current Position', _getCurrentPosition()),
+          _buildInfoRow(context, 'Current Position', _getCurrentPosition(useMetric)),
           const SizedBox(height: 16),
           _buildInfoRow(context, 'Next Pass', _getNextPassText()),
           const SizedBox(height: 32),
@@ -99,12 +111,18 @@ class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
     );
   }
 
-  String _getCurrentPosition() {
+  String _getCurrentPosition(bool useMetric) {
     final now = DateTime.now().toUtc();
     final pos = OrbitUtils.getSatellitePosition(widget.satellite, now);
     if (pos['lat'] == 0.0 && pos['lon'] == 0.0 && pos['alt'] == 0.0) return 'Unknown';
     
-    return '${pos['lat']!.toStringAsFixed(2)}°, ${pos['lon']!.toStringAsFixed(2)}° @ ${pos['alt']!.toStringAsFixed(1)}km';
+    final alt = pos['alt']!.toDouble();
+    if (useMetric) {
+      return '${pos['lat']!.toStringAsFixed(2)}°, ${pos['lon']!.toStringAsFixed(2)}° @ ${alt.toStringAsFixed(1)}km';
+    } else {
+      final altMi = alt * 0.621371;
+      return '${pos['lat']!.toStringAsFixed(2)}°, ${pos['lon']!.toStringAsFixed(2)}° @ ${altMi.toStringAsFixed(1)}mi';
+    }
   }
 
   String _getNextPassText() {
