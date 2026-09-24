@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../data/satellite_repository.dart';
@@ -27,25 +28,34 @@ class _ISSTrackerScreenState extends State<ISSTrackerScreen> {
     _fetchISS();
   }
 
-  Future<void> _fetchLocation() async {
-    try {
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
-        _currentPosition = await Geolocator.getCurrentPosition();
-      }
-    } catch (_) {
-      // Location is a nice-to-have for accurate next-pass timing; fall back
-      // to no position (SatelliteDetailSheet handles null lat/lon) rather
-      // than blocking the ISS position/favorite view on it.
+  Future<void> _requestLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services are disabled.');
     }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions were denied.');
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permissions are permanently denied.');
+    }
+
+    _currentPosition = await Geolocator.getCurrentPosition();
   }
 
   Future<void> _fetchISS() async {
     try {
-      await _fetchLocation();
+      setState(() => _isLoading = true);
+      await _requestLocationPermission();
       final satellites = await _repository.fetchActiveSatellites();
       // Find the ISS in the fetched list. 
       // The repository extracts noradId from line 2 which is substring(2, 7).
