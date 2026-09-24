@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/branding/logo.png" alt="Rockets app logo" width="180">
+</p>
+
 # Rockets
 
 A worldwide rocket launch tracker, satellite tracker, solar system explorer,
