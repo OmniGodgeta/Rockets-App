@@ -11,6 +11,8 @@ class Launch {
   final String? missionDescription;
   final String? imageUrl;
   final String? webcastUrl;
+  final double? padLatitude;
+  final double? padLongitude;
 
   const Launch({
     required this.id,
@@ -23,6 +25,8 @@ class Launch {
     this.missionDescription,
     this.imageUrl,
     this.webcastUrl,
+    this.padLatitude,
+    this.padLongitude,
   });
 
   factory Launch.fromJson(Map<String, dynamic> json) {
@@ -47,6 +51,8 @@ class Launch {
       webcastUrl: (vidUrls != null && vidUrls.isNotEmpty)
           ? vidUrls.first['url'] as String?
           : null,
+      padLatitude: double.tryParse(pad?['latitude'] as String? ?? ''),
+      padLongitude: double.tryParse(pad?['longitude'] as String? ?? ''),
     );
   }
 
@@ -62,6 +68,8 @@ class Launch {
       'missionDescription': missionDescription,
       'imageUrl': imageUrl,
       'webcastUrl': webcastUrl,
+      'padLatitude': padLatitude,
+      'padLongitude': padLongitude,
     };
   }
 }

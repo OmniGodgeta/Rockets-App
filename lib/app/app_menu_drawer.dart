@@ -21,7 +21,7 @@ class AppMenuDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(
                 color: AppTheme.surface,
               ),
@@ -36,7 +36,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.radar, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'Weather Radar',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -50,7 +50,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.rocket_launch, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'Rockets',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -64,7 +64,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.satellite_alt, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'Satellites',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -78,7 +78,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.wb_sunny, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'Solar System',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -92,7 +92,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.language, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'Galaxy',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -106,7 +106,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.public, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'Universe',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -120,7 +120,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.newspaper, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'News',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
@@ -134,7 +134,7 @@ class AppMenuDrawer extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.info_outline, color: AppTheme.textPrimary),
-              title: Text(
+              title: const Text(
                 'About',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),

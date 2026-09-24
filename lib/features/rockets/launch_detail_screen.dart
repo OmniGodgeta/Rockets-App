@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../data/favorite_repository.dart';
 import '../../models/launch.dart';
+import '../../features/radar/radar_screen.dart';
 
 class LaunchDetailScreen extends StatefulWidget {
   const LaunchDetailScreen({super.key, required this.launch});
@@ -36,6 +37,18 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
     if (url == null) return;
     final uri = Uri.parse(url);
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _openRadar() async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => RadarScreen(
+          lat: launch.padLatitude,
+          lon: launch.padLongitude,
+        ),
+      ),
+    );
   }
 
   @override
@@ -92,6 +105,14 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
               label: const Text('WATCH LIVESTREAM'),
             ),
           ],
+          if (launch.padLatitude != null && launch.padLongitude != null) ...[
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: _openRadar,
+              icon: const Icon(Icons.radar),
+              label: const Text('WEATHER RADAR AT LAUNCH SITE'),
+            ),
+          ],
         ],
       ),
     );
@@ -121,3 +142,4 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
+
