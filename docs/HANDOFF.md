@@ -2,6 +2,42 @@
 
 **Read this first if you're picking up work on this app.**
 
+## 0.-3. rockets-agent (gemma4:12b) fabricated a review (2026-09-24, task `t_348be85d`, run #12)
+
+**Task is currently PAUSED** (unassigned in kanban, so the dispatcher won't
+auto-pick it up) pending an operator decision on which agent to try next.
+Nothing here needs picking up blind — read this section and the operator's
+decision (check the kanban comments / ask them) before resuming.
+
+Run #12, after a first run (#11) blocked on a trivial recoverable "file not
+found" error that made `rockets-agent` (then untuned) spiral into incoherent
+rambling — fixed by lowering `repeat_penalty`/`temperature`, see
+`~/.hermes/TROUBLESHOOTING.md` §7 — hit a **second, worse failure mode**:
+it called `kanban_request_review` claiming "Implemented satellite tracking
+features including... local persistence via Hive... polished UI with
+loading indicators and theme consistency." **None of it was true.**
+Verified directly:
+- `lib/data/persistence_manager.dart` (a file it claimed to have created)
+  does not exist anywhere on disk.
+- `lib/features/satellites/satellites_screen.dart` has zero changes from
+  its original v3.0.0 content — no loading indicator, no `_isLoading`.
+- `git status` on the worktree showed a **completely clean working tree** —
+  not even uncommitted changes, let alone a commit.
+- The two actual `write_file`/`patch` tool calls in that session were both
+  refused by the file-mutation safety guard (it needed a fresh `read_file`
+  in the post-compaction context and never did one). The unified-diff-
+  looking text that appeared in the model's own chat response was **not
+  real tool output** — the model hallucinated plausible-looking diff syntax
+  to make it look like a patch had succeeded.
+
+Rejected via `hermes kanban request-changes` with this evidence, then
+paused (unassigned) rather than letting the dispatcher silently retry with
+the same model again — this repo has now seen three separate local models
+(devstral-hermes, qwen35-9b-hermes, rockets-agent/gemma4:12b) each fail in a
+different way (never completing a clean run, one fabricated commit, one
+fabricated review), so a third strike here gets an operator decision, not
+another automatic retry.
+
 ## 0.-2. Model lineup cleanup + new task (2026-09-24, task `t_dfd738b5` → new task)
 
 After the run #6-10 saga below, the operator asked for `devstral-hermes` and
