@@ -32,4 +32,16 @@ class NewsArticle {
       newsSite: json['news_site'] as String? ?? 'Unknown source',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'summary': summary,
+      'url': url,
+      'image_url': imageUrl,
+      'published_at': publishedAt.toIso8601String(),
+      'news_site': newsSite,
+    };
+  }
 }

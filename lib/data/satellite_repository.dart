@@ -3,9 +3,13 @@ import '../models/satellite_model.dart';
 
 class SatelliteRepository {
   static const _celestrakUrl = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle';
+  List<Satellite>? _cachedSatellites;
 
-  /// Fetches active satellites from CelesTrak and parses TLEs.
+  /// Fetches all active satellites from CelesTrak and parses TLEs.
+  /// Results are cached in memory for subsequent searches.
   Future<List<Satellite>> fetchActiveSatellites() async {
+    if (_cachedSatellites != null) return _cachedSatellites!;
+
     try {
       final response = await http.get(Uri.parse(_celestrakUrl));
 
@@ -23,9 +27,10 @@ class SatelliteRepository {
           if (line1.isNotEmpty && line2.isNotEmpty) {
             final noradId = _extractNoradId(line2);
             satellites.add(Satellite.fromTle(name, noradId, line1, line2));
-            i += 2; 
+            i += 2;
           }
         }
+        _cachedSatellites = satellites;
         return satellites;
       } else {
         throw Exception('Failed to fetch satellites: ${response.statusCode}');

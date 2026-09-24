@@ -49,4 +49,19 @@ class Launch {
           : null,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'net': net.toIso8601String(),
+      'statusName': statusName,
+      'rocketName': rocketName,
+      'padName': padName,
+      'locationName': locationName,
+      'missionDescription': missionDescription,
+      'imageUrl': imageUrl,
+      'webcastUrl': webcastUrl,
+    };
+  }
 }

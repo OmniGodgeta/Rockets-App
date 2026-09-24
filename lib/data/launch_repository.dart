@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/launch.dart';
 
@@ -7,8 +8,20 @@ import '../models/launch.dart';
 /// (https://thespacedevs.com/llapi) - no API key required.
 class LaunchRepository {
   static const _baseUrl = 'https://ll.thespacedevs.com/2.2.0';
+  static const String _cacheBoxName = 'cached_launches';
 
-  Future<List<Launch>> fetchUpcoming({int limit = 30}) async {
+  late Box<String> _cacheBox;
+
+  Future<void> init() async {
+    _cacheBox = await Hive.openBox<String>(_cacheBoxName);
+  }
+
+  Future<List<Launch>> fetchUpcoming({int limit = 30, bool useCache = true}) async {
+    if (useCache && _cacheBox.isNotEmpty) {
+      final cachedData = _cacheBox.values.toList();
+      return cachedData.take(limit).map((json) => Launch.fromJson(jsonDecode(json))).toList();
+    }
+
     final uri = Uri.parse('$_baseUrl/launch/upcoming/?limit=$limit');
     final response = await http.get(uri);
     if (response.statusCode != 200) {
@@ -16,8 +29,16 @@ class LaunchRepository {
     }
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final results = body['results'] as List<dynamic>? ?? [];
-    return results
+    final launches = results
         .map((json) => Launch.fromJson(json as Map<String, dynamic>))
         .toList();
+
+    // Update cache: clear old and save new
+    await _cacheBox.clear();
+    for (var launch in launches) {
+      await _cacheBox.put(launch.id.toString(), jsonEncode(launch.toJson()));
+    }
+
+    return launches;
   }
 }

@@ -23,6 +23,7 @@ dependencies:
   sensors_plus: ^7.1.0
   sgp4_sdp4: ^0.1.0
   geolocator: ^13.0.1
+  permission_handler: ^13.0.2
 
 dev_dependencies:
   flutter_test:

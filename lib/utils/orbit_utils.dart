@@ -51,6 +51,22 @@ class OrbitUtils {
     }
   }
 
+  /// Calculates the bearing (azimuth) from a user location to a satellite position in degrees.
+  static double calculateAzimuth(double userLat, double userLon, double satLat, double satLon) {
+    final uLat = userLat * pi / 180;
+    final uLon = userLon * pi / 180;
+    final sLat = satLat * pi / 180;
+    final sLon = satLon * pi / 180;
+
+    final deltaLon = sLon - uLon;
+
+    final y = sin(deltaLon) * cos(sLat);
+    final x = cos(uLat) * sin(sLat) - sin(uLat) * cos(sLat) * cos(deltaLon);
+
+    var azimuth = atan2(y, x) * 180 / pi;
+    return (azimuth + 360) % 360;
+  }
+
   /// Calculates when a satellite will next pass overhead given user location.
   /// This is improved from a simple altitude check to use Site.getLookAngle for actual visibility.
   static DateTime? calculateNextPass(Satellite satellite, double userLat, double userLon, double userAltKm) {
