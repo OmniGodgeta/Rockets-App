@@ -1,19 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 import '../../app/theme.dart';
 
-/// "Satellites" tab: a live Starlink-map-style 3D view of every satellite in
-/// orbit (https://satellitemap.space), per the operator's own request that
-/// this be the reference design ("look into Starlink map ... that's the
-/// design I want"), embedded directly rather than reimplemented natively.
-///
-/// TODO (next agent): the search bar below is a UI shell only - it does not
-/// yet filter satellitemap.space's embedded view (that site has no public
-/// query-string search API to drive from outside). TODO: compass/"which way
-/// to look" direction-finder mode using device sensors (flutter_compass +
-/// satellite TLE/orbital-position math) is not built yet - out of scope for
-/// this foundation pass.
+/// \"Satellites\" tab: a live Starlink-map-style 3D view of every satellite in
+/// orbit (https://satellitemap.space).
 class SatellitesScreen extends StatefulWidget {
   const SatellitesScreen({super.key});
 
