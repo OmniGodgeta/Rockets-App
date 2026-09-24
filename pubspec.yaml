@@ -33,7 +33,7 @@ dependencies:
   
   # Video Streaming
   youtube_player_flutter: ^8.1.2
-  player: ^2.3.0
+
   
   # URL Loading
   url_launcher: ^6.2.4
