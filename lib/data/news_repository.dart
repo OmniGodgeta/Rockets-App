@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -41,6 +42,7 @@ class NewsRepository {
 
           if (articles.isNotEmpty) return articles;
         } catch (e) {
+          debugPrint('Error reading NewsRepository cache: $e');
           await _cacheBox.clear();
         }
       } else {

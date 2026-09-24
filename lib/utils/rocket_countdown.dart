@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../app/theme.dart';
 
 class RocketCountdown extends StatefulWidget {
   const RocketCountdown({super.key, required this.net});
@@ -12,13 +13,14 @@ class RocketCountdown extends StatefulWidget {
 
 class _RocketCountdownState extends State<RocketCountdown> {
   late Timer _timer;
-  late String _countdownText;
+  Duration _remaining = Duration.zero;
+  bool _isLaunched = false;
 
   @override
   void initState() {
     super.initState();
-    _updateCountdown();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _updateCountdown());
+    _calculateRemaining();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _calculateRemaining());
   }
 
   @override
@@ -27,42 +29,82 @@ class _RocketCountdownState extends State<RocketCountdown> {
     super.dispose();
   }
 
-  void _updateCountdown() {
+  void _calculateRemaining() {
     if (!mounted) return;
-    final now = DateTime.now();
-    final diff = widget.net.difference(now);
-
+    final diff = widget.net.difference(DateTime.now());
     setState(() {
       if (diff.isNegative) {
-        _countdownText = 'LAUNCHED';
+        _isLaunched = true;
+        _remaining = Duration.zero;
       } else {
-        final days = diff.inDays;
-        final hours = diff.inHours % 24;
-        final minutes = diff.inMinutes % 60;
-        final seconds = diff.inSeconds % 60;
-
-        if (days > 0) {
-          _countdownText = 'T-${days}d ${hours}h ${minutes}m ${seconds}s';
-        } else if (hours > 0) {
-          _countdownText = 'T-${hours}h ${minutes}m ${seconds}s';
-        } else if (minutes > 0) {
-          _countdownText = 'T-${minutes}m ${seconds}s';
-        } else {
-          _countdownText = 'T-${seconds}s';
-        }
+        _isLaunched = false;
+        _remaining = diff;
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      _countdownText,
-      style: const TextStyle(
-        color: Colors.redAccent,
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-      ),
+    if (_isLaunched) {
+      return Center(
+        child: Text(
+          'LAUNCHED',
+          style: AppTheme.headline.copyWith(
+            color: AppTheme.accent,
+            letterSpacing: 4,
+          ),
+        ),
+      );
+    }
+
+    final days = _remaining.inDays;
+    final hours = _remaining.inHours % 24;
+    final minutes = _remaining.inMinutes % 60;
+    final seconds = _remaining.inSeconds % 60;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _TimeUnit(value: days, label: 'DAYS'),
+            _TimeUnit(value: hours, label: 'HRS'),
+            _TimeUnit(value: minutes, label: 'MIN'),
+            _TimeUnit(value: seconds, label: 'SEC'),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TimeUnit extends StatelessWidget {
+  const _TimeUnit({required this.value, required this.label});
+
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value.toString().padLeft(2, '0'),
+          style: AppTheme.headline.copyWith(
+            fontSize: 28,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppTheme.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }
