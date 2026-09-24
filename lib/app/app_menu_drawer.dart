@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'theme.dart';
 import '../../features/radar/radar_screen.dart';
 import '../../features/about/about_screen.dart';
+import '../../features/aurora/aurora_screen.dart';
 import '../../features/rockets/rockets_screen.dart';
 import '../../features/satellites/satellites_screen.dart';
 import '../../features/satellites/iss_tracker_screen.dart';
@@ -47,6 +48,20 @@ class AppMenuDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const RadarScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.nightlight_outlined, color: AppTheme.textPrimary),
+              title: const Text(
+                'Aurora Forecast',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuroraScreen()),
                 );
               },
             ),
