@@ -5,6 +5,7 @@ import '../../features/radar/radar_screen.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/rockets/rockets_screen.dart';
 import '../../features/satellites/satellites_screen.dart';
+import '../../features/satellites/iss_tracker_screen.dart';
 import '../../features/solar_system/solar_system_screen.dart';
 import '../../features/galaxy/galaxy_screen.dart';
 import '../../features/universe/universe_screen.dart';
@@ -73,6 +74,20 @@ class AppMenuDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SatellitesScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.gps_fixed, color: AppTheme.textPrimary),
+              title: const Text(
+                'ISS Tracker',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ISSTrackerScreen()),
                 );
               },
             ),
