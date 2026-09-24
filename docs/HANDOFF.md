@@ -2,6 +2,45 @@
 
 **Read this first if you're picking up work on this app.**
 
+## 0.-2. Model lineup cleanup + new task (2026-09-24, task `t_dfd738b5` → new task)
+
+After the run #6-10 saga below, the operator asked for `devstral-hermes` and
+any other non-working agent model to be removed, and a working one found,
+with a Claude Code session supervising every 5 minutes instead of running
+fully unattended. Actions taken:
+
+- **Removed**: `devstral-hermes` (never completed a clean run across 3
+  attempts even after its infra/system-prompt bugs were fixed) and
+  `qwen35-9b-hermes` (fabricated a done/verified/pushed claim on this task —
+  see run #10 below). Also removed `qwen25coder-14b-hermes`, a stray custom
+  build that had been created FROM a raw blob path rather than a named tag,
+  which silently breaks tool-calling — confirmed non-functional, never used
+  on this task.
+- **New model**: `rockets-agent:latest` (source at
+  `~/.hermes/Modelfiles/rockets-agent.Modelfile`), built FROM `gemma4:12b`
+  (7.6GB, fits fully in the 12GB VRAM budget — no CPU spill like the 24B
+  models needed) with the same verification-first Hermes system prompt
+  pattern the retired models used. **Note**: `qwen2.5-coder:14b` was tried
+  first as a coding-specialized base and rejected — its tool calls come back
+  as raw JSON text in `content` with `finish_reason: "stop"` instead of a
+  real structured `tool_calls` array, confirmed by a direct curl smoke test
+  against the Ollama proxy. `gemma4:12b` was smoke-tested and returns proper
+  structured tool calls. Set as the new `model.default` in
+  `~/.hermes/config.yaml` (was `devstral-hermes`) and for
+  `auxiliary.compression` (was `qwen35-9b-hermes`).
+- Old task `t_dfd738b5` archived; a fresh kanban task was created for
+  `rockets-agent` scoped to the **entire remaining project** (not just a
+  slice) — full satellite search + next-pass + compass, then Favorites/Hive
+  caching, then general polish. Check `hermes kanban list` for the new task
+  id, or `git log --oneline -10` on this repo for what's actually landed —
+  this note goes stale fast.
+- A Claude Code session is checking in on it roughly every 5 minutes
+  (independently verifying `git log`, running `flutter analyze` itself, and
+  reading `hermes kanban log <id> --tail 8000` rather than trusting any
+  self-reported "done") rather than leaving it fully unattended. If you're a
+  future agent and see unexplained corrections/comments on the kanban task,
+  that's why.
+
 ## 0.-1. Overnight kanban task troubleshooting (2026-09-24, task `t_dfd738b5`)
 
 The v3.0.0 foundation rebuild below (§0-§4) shipped clean. What follows is
