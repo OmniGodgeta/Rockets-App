@@ -203,7 +203,10 @@ class _SatellitesScreenState extends State<SatellitesScreen> {
                     title: Text(s.name, style: const TextStyle(color: AppTheme.textPrimary)),
                     subtitle: Text('NORAD: ${s.noradId}', style: const TextStyle(color: AppTheme.textSecondary)),
                     onTap: () {
-                      Navigator.pop(context);
+                      setState(() {
+                        _searchResults = [];
+                        _searchController.clear();
+                      });
                       _showSatelliteDetails(s);
                     },
                   );

@@ -23,7 +23,7 @@ class _RocketsScreenState extends State<RocketsScreen> {
   @override
   void initState() {
     super.initState();
-    _launchesFuture = _repository.fetchUpcoming();
+    _launchesFuture = _repository.init().then((_) => _repository.fetchUpcoming());
   }
 
   Future<void> _refresh() async {

@@ -23,7 +23,7 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   void initState() {
     super.initState();
-    _articlesFuture = _repository.fetchLatest();
+    _articlesFuture = _repository.init().then((_) => _repository.fetchLatest());
   }
 
   Future<void> _refresh() async {
