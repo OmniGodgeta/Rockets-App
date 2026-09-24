@@ -13,7 +13,9 @@ import '../favorites/favorites_screen.dart';
 /// "Rockets" tab: scrollable feed of upcoming launches worldwide, similar in 
 /// spirit to SpaceLaunchNow. Tap a launch for detail + livestream link.
 class RocketsScreen extends StatefulWidget {
-  const RocketsScreen({super.key});
+  const RocketsScreen({super.key, this.onMenuPressed});
+
+  final VoidCallback? onMenuPressed;
 
   @override
   State<RocketsScreen> createState() => _RocketsScreenState();
@@ -54,6 +56,12 @@ class _RocketsScreenState extends State<RocketsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('ROCKETS'),
+        leading: widget.onMenuPressed != null
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: widget.onMenuPressed,
+              )
+            : null,
         actions: [
           if (_favoritesInitialized)
             IconButton(

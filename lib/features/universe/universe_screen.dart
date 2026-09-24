@@ -5,7 +5,9 @@ import '../../app/theme.dart';
 
 /// "Universe" tab: an interactive view of the cosmos using Cosmoscope.
 class UniverseScreen extends StatefulWidget {
-  const UniverseScreen({super.key});
+  const UniverseScreen({super.key, this.onMenuPressed});
+
+  final VoidCallback? onMenuPressed;
 
   @override
   State<UniverseScreen> createState() => _UniverseScreenState();
@@ -26,7 +28,15 @@ class _UniverseScreenState extends State<UniverseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('UNIVERSE')),
+      appBar: AppBar(
+        title: const Text('UNIVERSE'),
+        leading: widget.onMenuPressed != null
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: widget.onMenuPressed,
+              )
+            : null,
+      ),
       body: WebViewWidget(controller: _controller),
     );
   }

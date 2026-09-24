@@ -10,7 +10,9 @@ import '../../utils/ui_helpers.dart';
 
 /// "News" tab: rocket, space, satellite, space station and astronomy news.
 class NewsScreen extends StatefulWidget {
-  const NewsScreen({super.key});
+  const NewsScreen({super.key, this.onMenuPressed});
+
+  final VoidCallback? onMenuPressed;
 
   @override
   State<NewsScreen> createState() => _NewsScreenState();
@@ -40,7 +42,15 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('NEWS')),
+      appBar: AppBar(
+        title: const Text('NEWS'),
+        leading: widget.onMenuPressed != null
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: widget.onMenuPressed,
+              )
+            : null,
+      ),
       body: FutureBuilder<List<NewsArticle>>(
         future: _articlesFuture,
         builder: (context, snapshot) {

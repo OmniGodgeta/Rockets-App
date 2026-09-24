@@ -14,7 +14,9 @@ import '../../utils/orbit_utils.dart';
 /// \"Satellites\" tab: a live Starlink-map-style 3D view of every satellite in
 /// orbit (https://satellitemap.space).
 class SatellitesScreen extends StatefulWidget {
-  const SatellitesScreen({super.key});
+  const SatellitesScreen({super.key, this.onMenuPressed});
+
+  final VoidCallback? onMenuPressed;
 
   @override
   State<SatellitesScreen> createState() => _SatellitesScreenState();
@@ -164,6 +166,12 @@ class _SatellitesScreenState extends State<SatellitesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SATELLITES'),
+        leading: widget.onMenuPressed != null
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: widget.onMenuPressed,
+              )
+            : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.star),

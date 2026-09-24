@@ -7,7 +7,9 @@ import '../../app/theme.dart';
 /// galactic core, nebulae, star clusters, Local Group), same embedded-webview
 /// pattern as the Solar System tab.
 class GalaxyScreen extends StatefulWidget {
-  const GalaxyScreen({super.key});
+  const GalaxyScreen({super.key, this.onMenuPressed});
+
+  final VoidCallback? onMenuPressed;
 
   @override
   State<GalaxyScreen> createState() => _GalaxyScreenState();
@@ -28,7 +30,15 @@ class _GalaxyScreenState extends State<GalaxyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('GALAXY')),
+      appBar: AppBar(
+        title: const Text('GALAXY'),
+        leading: widget.onMenuPressed != null
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: widget.onMenuPressed,
+              )
+            : null,
+      ),
       body: WebViewWidget(controller: _controller),
     );
   }

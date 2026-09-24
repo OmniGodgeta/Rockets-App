@@ -1,0 +1,154 @@
+import 'package:flutter/material.dart';
+
+import 'theme.dart';
+import '../../features/radar/radar_screen.dart';
+import '../../features/about/about_screen.dart';
+import '../../features/rockets/rockets_screen.dart';
+import '../../features/satellites/satellites_screen.dart';
+import '../../features/solar_system/solar_system_screen.dart';
+import '../../features/galaxy/galaxy_screen.dart';
+import '../../features/universe/universe_screen.dart';
+import '../../features/news/news_screen.dart';
+
+class AppMenuDrawer extends StatelessWidget {
+  const AppMenuDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: Container(
+        color: AppTheme.background,
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: AppTheme.surface,
+              ),
+              child: Text(
+                'Rockets',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.radar, color: AppTheme.textPrimary),
+              title: Text(
+                'Weather Radar',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RadarScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.rocket_launch, color: AppTheme.textPrimary),
+              title: Text(
+                'Rockets',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RocketsScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.satellite_alt, color: AppTheme.textPrimary),
+              title: Text(
+                'Satellites',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SatellitesScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.wb_sunny, color: AppTheme.textPrimary),
+              title: Text(
+                'Solar System',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SolarSystemScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.language, color: AppTheme.textPrimary),
+              title: Text(
+                'Galaxy',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const GalaxyScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.public, color: AppTheme.textPrimary),
+              title: Text(
+                'Universe',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UniverseScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.newspaper, color: AppTheme.textPrimary),
+              title: Text(
+                'News',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NewsScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline, color: AppTheme.textPrimary),
+              title: Text(
+                'About',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

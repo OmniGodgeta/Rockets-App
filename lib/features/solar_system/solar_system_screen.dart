@@ -7,7 +7,9 @@ import '../../app/theme.dart';
 /// embedded directly per the operator's own simplification ("it could simply
 /// launch the NASA interactive 3D map of the solar system").
 class SolarSystemScreen extends StatefulWidget {
-  const SolarSystemScreen({super.key});
+  const SolarSystemScreen({super.key, this.onMenuPressed});
+
+  final VoidCallback? onMenuPressed;
 
   @override
   State<SolarSystemScreen> createState() => _SolarSystemScreenState();
@@ -28,7 +30,15 @@ class _SolarSystemScreenState extends State<SolarSystemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SOLAR SYSTEM')),
+      appBar: AppBar(
+        title: const Text('SOLAR SYSTEM'),
+        leading: widget.onMenuPressed != null
+            ? IconButton(
+                icon: const Icon(Icons.menu),
+                onPressed: widget.onMenuPressed,
+              )
+            : null,
+      ),
       body: WebViewWidget(controller: _controller),
     );
   }
