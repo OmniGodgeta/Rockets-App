@@ -4,12 +4,32 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../data/favorite_repository.dart';
 import '../../models/launch.dart';
 
-class LaunchDetailScreen extends StatelessWidget {
+class LaunchDetailScreen extends StatefulWidget {
   const LaunchDetailScreen({super.key, required this.launch});
 
   final Launch launch;
+
+  @override
+  State<LaunchDetailScreen> createState() => _LaunchDetailScreenState();
+}
+
+class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
+  late final FavoriteRepository _favoriteRepository;
+  bool _favoritesReady = false;
+
+  Launch get launch => widget.launch;
+
+  @override
+  void initState() {
+    super.initState();
+    _favoriteRepository = FavoriteRepository();
+    _favoriteRepository.init().then((_) {
+      if (mounted) setState(() => _favoritesReady = true);
+    });
+  }
 
   Future<void> _openWebcast() async {
     final url = launch.webcastUrl;
@@ -21,8 +41,22 @@ class LaunchDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('EEEE, MMM d, y - HH:mm');
+    final isFavorite = _favoritesReady && _favoriteRepository.isLaunchFavorite(launch.id);
     return Scaffold(
-      appBar: AppBar(title: Text(launch.name.toUpperCase())),
+      appBar: AppBar(
+        title: Text(launch.name.toUpperCase()),
+        actions: [
+          IconButton(
+            icon: Icon(isFavorite ? Icons.star : Icons.star_border),
+            onPressed: !_favoritesReady
+                ? null
+                : () async {
+                    await _favoriteRepository.toggleLaunchFavorite(launch.id);
+                    if (mounted) setState(() {});
+                  },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

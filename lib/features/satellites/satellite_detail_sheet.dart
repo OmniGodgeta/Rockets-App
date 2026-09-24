@@ -24,17 +24,22 @@ class SatelliteDetailSheet extends StatefulWidget {
 
 class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
   late final FavoriteRepository _favoriteRepository;
+  bool _favoritesReady = false;
 
   @override
   void initState() {
     super.initState();
     _favoriteRepository = FavoriteRepository();
+    _favoriteRepository.init().then((_) {
+      if (mounted) setState(() => _favoritesReady = true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final isFavorite = _favoriteRepository.isSatelliteFavorite(widget.satellite.noradId);
+    final isFavorite = _favoritesReady &&
+        _favoriteRepository.isSatelliteFavorite(widget.satellite.noradId);
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -67,12 +72,14 @@ class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () async {
-                await _favoriteRepository.toggleSatelliteFavorite(widget.satellite.noradId);
-                if (mounted) {
-                  setState(() {});
-                }
-              },
+              onPressed: !_favoritesReady
+                  ? null
+                  : () async {
+                      await _favoriteRepository.toggleSatelliteFavorite(widget.satellite.noradId);
+                      if (mounted) {
+                        setState(() {});
+                      }
+                    },
               child: Text(isFavorite ? 'REMOVE FROM FAVORITES' : 'ADD TO FAVORITES'),
             ),
           ),
