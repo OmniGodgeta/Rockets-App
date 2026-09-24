@@ -13,6 +13,7 @@ analyzer:
   exclude:
     - build/**
     - android/**
+    - _archive_pre_foundation/**
 
 linter:
   # The lint rules applied to this project can be customized in the

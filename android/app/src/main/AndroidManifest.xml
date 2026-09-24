@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for all networking: launch/news API calls, and the
+         embedded Satellites/Solar System webviews. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="rockets"
         android:name="${applicationName}"
