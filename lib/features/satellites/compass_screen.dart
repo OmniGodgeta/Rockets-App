@@ -202,7 +202,7 @@ class _CompassScreenState extends State<CompassScreen> {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: AppTheme.surfaceBorder, width: 2),
-        color: AppTheme.surface.withOpacity(0.5),
+        color: AppTheme.surface.withValues(alpha: 0.5),
       ),
       child: Stack(
         children: [
