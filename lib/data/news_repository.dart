@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -10,6 +11,7 @@ import '../models/news_article.dart';
 class NewsRepository {
   static const _baseUrl = 'https://api.spaceflightnewsapi.net/v4';
   static const String _cacheBoxName = 'cached_news';
+  static const String _currentCacheVersion = '1';
 
   late Box<String> _cacheBox;
 
@@ -19,8 +21,33 @@ class NewsRepository {
 
   Future<List<NewsArticle>> fetchLatest({int limit = 30, bool useCache = true}) async {
     if (useCache && _cacheBox.isNotEmpty) {
-      final cachedData = _cacheBox.values.toList();
-      return cachedData.take(limit).map((json) => NewsArticle.fromJson(jsonDecode(json))).toList();
+      final storedVersion = _cacheBox.get('cache_version');
+      if (storedVersion == _currentCacheVersion) {
+        try {
+          // Use keys to avoid the metadata-in-values problem
+          final dataKeys = _cacheBox.keys.where((k) => k != 'cache_version').toList();
+          
+          final articles = <NewsArticle>[];
+          for (final key in dataKeys) {
+            final jsonStr = _cacheBox.get(key);
+            if (jsonStr != null) {
+              final map = jsonDecode(jsonStr) as Map<String, dynamic>;
+              // Defensive validation during read: ensure top-level structural keys exist
+              if (map['id'] != null && map['title'] != null) {
+                articles.add(NewsArticle.fromJson(map));
+              }
+            }
+            if (articles.length >= limit) break;
+          }
+
+          if (articles.isNotEmpty) return articles;
+        } catch (e) {
+          debugPrint('Error reading NewsRepository cache: $e');
+          await _cacheBox.clear();
+        }
+      } else {
+        await _cacheBox.clear();
+      }
     }
 
     final uri = Uri.parse('$_baseUrl/articles/?limit=$limit&ordering=-published_at');
@@ -32,10 +59,13 @@ class NewsRepository {
           .map((json) => NewsArticle.fromJson(json as Map<String, dynamic>))
           .toList();
 
-      // Update cache: clear old and save new
-      await _cacheBox.clear();
-      for (var article in articles) {
-        await _cacheBox.put(article.id.toString(), jsonEncode(article.toJson()));
+      if (articles.isNotEmpty) {
+        await _cacheBox.clear();
+        await _cacheBox.put('cache_version', _currentCacheVersion);
+
+        for (var article in articles) {
+          await _cacheBox.put(article.id.toString(), jsonEncode(article.toJson()));
+        }
       }
 
       return articles;

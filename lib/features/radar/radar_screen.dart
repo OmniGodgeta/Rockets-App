@@ -26,6 +26,26 @@ class _RadarScreenState extends State<RadarScreen> {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(AppTheme.background)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onPageFinished: (String url) {
+            // Attempt to hide the Zoom Earth app-install banner/nag using JS injection
+            _controller.runJavaScript('''
+              (function() {
+                const nagSelectors = [
+                  '.app-install-banner',
+                  '[class*="app-install"]',
+                  '[id*="app-install"]',
+                  '.download-prompt'
+                ];
+                nagSelectors.forEach(selector => {
+                  document.querySelectorAll(selector).forEach(el => el.remove());
+                });
+              })();
+            ''');
+          },
+        ),
+      )
       ..loadRequest(Uri.parse(url));
   }
 

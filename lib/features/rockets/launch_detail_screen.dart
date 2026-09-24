@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../data/favorite_repository.dart';
 import '../../models/launch.dart';
 import '../../features/radar/radar_screen.dart';
+import '../../utils/rocket_countdown.dart';
 
 class LaunchDetailScreen extends StatefulWidget {
   const LaunchDetailScreen({super.key, required this.launch});
@@ -79,13 +80,19 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
               child: CachedNetworkImage(
                 imageUrl: launch.imageUrl!,
                 fit: BoxFit.cover,
-                errorWidget: (context, url, error) => const ColoredBox(color: AppTheme.surfaceBorder),
+                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                errorWidget: (context, url, error) => Container(
+                  color: AppTheme.surfaceBorder,
+                  child: const Icon(Icons.rocket_launch, color: AppTheme.textSecondary, size: 48),
+                ),
               ),
             ),
           const SizedBox(height: 16),
           Text(launch.name.toUpperCase(), style: AppTheme.headline.copyWith(fontSize: 20)),
           const SizedBox(height: 8),
           Text(dateFormat.format(launch.net.toLocal()), style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 16),
+          RocketCountdown(net: launch.net),
           const SizedBox(height: 16),
           _InfoRow(label: 'STATUS', value: launch.statusName),
           _InfoRow(label: 'ROCKET', value: launch.rocketName),
@@ -130,7 +137,7 @@ class _InfoRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           SizedBox(
             width: 90,

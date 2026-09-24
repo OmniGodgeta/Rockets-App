@@ -9,6 +9,7 @@ import '../../data/launch_repository.dart';
 import '../../models/launch.dart';
 import 'launch_detail_screen.dart';
 import '../favorites/favorites_screen.dart';
+import '../../utils/rocket_countdown.dart';
 
 /// "Rockets" tab: scrollable feed of upcoming launches worldwide, similar in 
 /// spirit to SpaceLaunchNow. Tap a launch for detail + livestream link.
@@ -136,7 +137,11 @@ class _LaunchCard extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: launch.imageUrl!,
                   fit: BoxFit.cover,
-                  errorWidget: (context, url, error) => const ColoredBox(color: AppTheme.surfaceBorder),
+                  placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  errorWidget: (context, url, error) => Container(
+                    color: AppTheme.surfaceBorder,
+                    child: const Icon(Icons.rocket_launch, color: AppTheme.textSecondary, size: 32),
+                  ),
                 ),
               ),
             Expanded(
@@ -177,69 +182,9 @@ class _LaunchCard extends StatelessWidget {
                 ),
               ),
             ),
-            _CountdownTicker(net: launch.net),
+            RocketCountdown(net: launch.net),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CountdownTicker extends StatefulWidget {
-  const _CountdownTicker({required this.net});
-
-  final DateTime net;
-
-  @override
-  State<_CountdownTicker> createState() => _CountdownTickerState();
-}
-
-class _CountdownTickerState extends State<_CountdownTicker> {
-  late Timer _timer;
-  late String _countdownText;
-
-  @override
-  void initState() {
-    super.initState();
-    _updateCountdown();
-    _timer = Timer.periodic(const Duration(minutes: 1), (_) => _updateCountdown());
-  }
-
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
-
-  void _updateCountdown() {
-    if (!mounted) return;
-    final now = DateTime.now();
-    final diff = widget.net.difference(now);
-
-    setState(() {
-      if (diff.isNegative) {
-        _countdownText = 'LAUNCHED';
-      } else {
-        final days = diff.inDays;
-        final hours = diff.inHours % 24;
-        final minutes = diff.inMinutes % 60;
-
-        if (days > 0) {
-          _countdownText = 'T-${days}d ${hours}h';
-        } else {
-          _countdownText = 'T-${hours}h ${minutes}m';
-        }
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Text(
-        _countdownText,
-        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );
   }

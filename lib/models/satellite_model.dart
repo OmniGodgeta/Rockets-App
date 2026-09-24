@@ -19,4 +19,22 @@ class Satellite {
       tleLine2: line2,
     );
   }
+
+  factory Satellite.fromJson(Map<String, dynamic> json) {
+    return Satellite(
+      name: json['name'] as String,
+      noradId: json['noradId'] as String,
+      tleLine1: json['tleLine1'] as String,
+      tleLine2: json['tleLine2'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'noradId': noradId,
+      'tleLine1': tleLine1,
+      'tleLine2': tleLine2,
+    };
+  }
 }
