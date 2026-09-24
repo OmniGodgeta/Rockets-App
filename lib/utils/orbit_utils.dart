@@ -20,7 +20,6 @@ class OrbitUtils {
       // Step 3: Convert DateTime to Julian date required by the library.
       final dt = time.toUtc();
       
-      // Fixing positional arguments error based on julian.dart definition:
       // Julian.fromFullDate(int year, int mon, int day, int hour, int min, {double sec = 0.0})
       final julian = Julian.fromFullDate(
         dt.year,
@@ -53,7 +52,8 @@ class OrbitUtils {
   }
 
   /// Calculates when a satellite will next pass overhead given user location.
-  static DateTime? calculateNextPass(Satellite satellite, double userLat, double userLon) {
+  /// This is improved from a simple altitude check to use Site.getLookAngle for actual visibility.
+  static DateTime? calculateNextPass(Satellite satellite, double userLat, double userLon, double userAltKm) {
     final now = DateTime.now().toUtc();
     const searchRangeHours = 24;
     const stepMinutes = 5;
@@ -62,9 +62,38 @@ class OrbitUtils {
       final testTime = now.add(Duration(minutes: i * stepMinutes));
       final pos = getSatellitePosition(satellite, testTime);
 
-      // Check if altitude is significantly above ground level (e.g., > 100 km).
-      if (pos['alt']! > 100.0) {
-        return testTime;
+      // If current position calculation failed (returned 0s), skip it.
+      if (pos['lat'] == 0.0 && pos['lon'] == 0.0 && pos['alt'] == 0.0) continue;
+
+      try {
+        // To determine if the satellite is actually visible/overhead (el > 0), 
+        // we need the ECI position at testTime and then find its look angle relative to user site.
+        final String t1 = satellite.tleLine1;
+        final String t2 = satellite.tleLine2;
+        final tle = TLE(satellite.name, t1, t2);
+        final orbit = Orbit(tle);
+        final julian = Julian.fromFullDate(
+          testTime.year,
+          testTime.month,
+          testTime.day,
+          testTime.hour,
+          testTime.minute,
+          sec: testTime.second + (testTime.millisecond / 1000.0),
+        );
+        final tSince = orbit.tPlusEpoch(julian);
+        final eciPos = orbit.getPosition(tSince);
+
+        // Get look angle from the user's geographical location
+        final site = Site.fromLatLngAlt(userLat, userLon, userAltKm);
+        final lookAngle = site.getLookAngle(eciPos);
+
+        // el (elevation) in radians. If el > 0, it is above the horizon.
+        if (lookAngle.el > 0.0) {
+          return testTime;
+        }
+      } catch (_) {
+        // Ignore errors during propagation search
+        continue;
       }
     }
 
