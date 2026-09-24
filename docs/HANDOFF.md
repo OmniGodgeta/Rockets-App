@@ -2,6 +2,42 @@
 
 **Read this first if you're picking up work on this app.**
 
+## 0.-4. Full device-testing bug-report round closed out (2026-09-24, through commit 02987b6)
+
+Every item from the operator's on-device bug report (screenshots: "Unknown
+rocket/pad/location", missing rocket images, empty countdown/mission-text
+sections, a bare-text ISS tracker, a "Download Zoom Earth" nag on Weather
+Radar, and the app icon's black border) is now genuinely fixed, verified,
+and merged into this branch:
+
+- **Cache versioning + defensive validation** added to `LaunchRepository`,
+  `NewsRepository`, and `SatelliteRepository` — a device with a
+  pre-existing stale/incompatible cache now self-heals via a version check
+  instead of serving broken data forever.
+- **Rocket images + mission description + real countdown** wired into
+  `rockets_screen.dart`/`launch_detail_screen.dart`, using a shared
+  `RocketCountdown`/`rocket_countdown.dart` utility instead of duplicated
+  logic.
+- **ISS Tracker** replaced with a real `WebViewController` deep-linked to a
+  satellite map (matches the Satellites tab's own visual approach) instead
+  of a bare NORAD-id/position text readout.
+- **Weather Radar's Zoom Earth app-install nag** suppressed via JS
+  injection on `onPageFinished` in `radar_screen.dart`.
+- **New app icon**: the old icon sat inside a visible black rounded-square
+  border and was a repeat complaint. Generated fresh (SVG → PNG: a rocket
+  silhouette on a full-bleed dark radial gradient matching the app's
+  blue/black theme, stars, orbital-ring accent — no padded border,
+  edge-to-edge artwork), replaced `assets/branding/logo.png`, regenerated
+  all Android mipmap densities via `flutter_launcher_icons`.
+- Also shipped in the same pass: launch reminder notifications
+  (`flutter_local_notifications`), a Settings screen (metric/imperial
+  units), a Rocket Size Comparison screen (custom-drawn silhouettes vs. a
+  human reference), and a Scale of the Universe drawer item.
+
+Verified before every merge in this round: `flutter analyze` (0 errors —
+2 cosmetic `info`-level lints remain, harmless) and a real
+`flutter build apk --debug` success, not just a self-report.
+
 ## 0.-3. Satellite Tracking, Favorites, Caching & UI Polish (2026-09-25)
 
 After the foundation rebuild (v3.0.0), the following features have been implemented and verified:
