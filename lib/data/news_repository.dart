@@ -26,13 +26,13 @@ class NewsRepository {
           // Use keys to avoid the metadata-in-values problem
           final allKeys = _cacheBox.keys.toList();
           final dataKeys = allKeys.where((k) => k != 'cache_version').toList();
-
+          
           final articles = <NewsArticle>[];
           for (final key in dataKeys) {
             final jsonStr = _cacheBox.get(key);
             if (jsonStr != null) {
               final map = jsonDecode(jsonStr) as Map<String, dynamic>;
-              // Defensive validation: ensure structural integrity for NewsArticle
+              // Defensive validation during read: ensure top-level structural keys exist
               if (map['id'] != null && map['title'] != null) {
                 articles.add(NewsArticle.fromJson(map));
               }
