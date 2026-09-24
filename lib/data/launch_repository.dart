@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -34,6 +35,8 @@ class LaunchRepository {
               // Defensive validation during read: ensure top-level structural keys exist
               if (map['rocket'] != null && map['pad'] != null && map['mission'] != null) {
                 launches.add(Launch.fromJson(map));
+              } else {
+                debugPrint('Skipping corrupted launch record in cache: $key');
               }
             }
             if (launches.length >= limit) break;
@@ -41,6 +44,7 @@ class LaunchRepository {
 
           if (launches.isNotEmpty) return launches;
         } catch (e) {
+          debugPrint('Error reading LaunchRepository cache: $e');
           await _cacheBox.clear();
         }
       } else {
