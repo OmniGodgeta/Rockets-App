@@ -13,6 +13,7 @@ class Launch {
   final String? webcastUrl;
   final double? padLatitude;
   final double? padLongitude;
+  final String providerName;
 
   const Launch({
     required this.id,
@@ -27,7 +28,18 @@ class Launch {
     this.webcastUrl,
     this.padLatitude,
     this.padLongitude,
+    this.providerName = 'Unknown provider',
   });
+
+  /// Whether this launch is imminent or in progress right now - from 10
+  /// minutes before its scheduled time to 2 hours after (covers holds,
+  /// delays within the window, and the flight itself for most missions).
+  bool get isHappeningNow {
+    final now = DateTime.now().toUtc();
+    final start = net.subtract(const Duration(minutes: 10));
+    final end = net.add(const Duration(hours: 2));
+    return now.isAfter(start) && now.isBefore(end);
+  }
 
   factory Launch.fromJson(Map<String, dynamic> json) {
     final pad = json['pad'] as Map<String, dynamic>?;
@@ -37,6 +49,7 @@ class Launch {
     final mission = json['mission'] as Map<String, dynamic>?;
     final status = json['status'] as Map<String, dynamic>?;
     final vidUrls = json['vidURLs'] as List<dynamic>?;
+    final provider = json['launch_service_provider'] as Map<String, dynamic>?;
 
     final fullRocketName = configuration?['full_name'] as String?;
 
@@ -57,6 +70,7 @@ class Launch {
           : null,
       padLatitude: double.tryParse(pad?['latitude'] as String? ?? ''),
       padLongitude: double.tryParse(pad?['longitude'] as String? ?? ''),
+      providerName: provider?['name'] as String? ?? 'Unknown provider',
     );
   }
 
@@ -74,6 +88,7 @@ class Launch {
       'webcastUrl': webcastUrl,
       'padLatitude': padLatitude,
       'padLongitude': padLongitude,
+      'providerName': providerName,
     };
   }
 }
