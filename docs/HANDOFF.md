@@ -2,6 +2,35 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.0.0 (2026-09-24) — first stable release
+
+Closed out the remaining "known but unbuilt" suggestions and shipped as
+v1.0.0, done directly by the Claude Code supervisor rather than the local
+agent (which has been reassigned to the Peak project):
+
+- **Pull-to-refresh fixed** — it existed already but silently did nothing;
+  `_refresh()` was calling `fetchUpcoming()` with the default
+  `useCache: true`, so pulling to refresh just re-served the same cached
+  data. Now forces a real network fetch.
+- **"Happening Now" state** — `Launch.isHappeningNow` (10 minutes before
+  `net` through 2 hours after) drives a red banner on the launch card.
+- **Provider filtering** — a horizontal filter-chip row above the Rockets
+  list, built from `launch_service_provider.name` (newly parsed onto
+  `Launch.providerName`).
+
+Also found and fixed two real pre-existing bugs while actually running
+`flutter test` for the first time in a while (it had been failing quietly,
+outside the routine `flutter analyze`/`flutter build` verification loop):
+a genuine `LateInitializationError` race on `RocketsScreen`'s
+`_launchesFuture` (real bug, not test-only — `initState()`'s async
+initializer only assigned it inside its own later `setState`, so the
+widget's first synchronous `build()` could run before that ever happened),
+and the test itself asserting stale nav labels from before a relabel.
+
+Verified: `flutter analyze` (0 errors), `flutter test` (1/1 passing — for
+the first time verified end-to-end in this project's history),
+`flutter build apk --release` succeeds.
+
 ## 0.-5. Round 2 polish from real device feedback on v0.10.0 (2026-09-24)
 
 The operator installed v0.10.0 and reported four more issues. All fixed and
