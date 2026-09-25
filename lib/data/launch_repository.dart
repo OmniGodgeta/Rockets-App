@@ -18,7 +18,7 @@ class LaunchRepository {
     _cacheBox = await Hive.openBox<String>(_cacheBoxName);
   }
 
-  Future<List<Launch>> fetchUpcoming({int limit = 30, bool useCache = true}) async {
+  Future<List<Launch>> fetchUpcoming({int limit = 150, bool useCache = true}) async {
     if (useCache && _cacheBox.isNotEmpty) {
       final storedVersion = _cacheBox.get('cache_version');
       if (storedVersion == _currentCacheVersion) {

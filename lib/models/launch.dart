@@ -40,22 +40,14 @@ class Launch {
 
     final fullRocketName = configuration?['full_name'] as String?;
 
-    // Starship fallback: some results have null rocket name/config but describe it in 'mission'.
-    // Or the LL2 API might be inconsistent for test flights.
-    String fallbackRocketName = '';
-    if (fullRocketName == null || fullRocketName == 'Unknown rocket') {
-      final desc = mission?['description'] as String? ?? '';
-      if (desc.toLowerCase().contains('starship')) {
-        fallbackRocketName = 'Starship';
-      }
-    }
-
+    // Starship fallback removed as it is no longer needed; SpaceX Starship launches
+    // correctly appear in the rocket configuration field in recent LL2 API responses.
     return Launch(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Unnamed launch',
       net: DateTime.tryParse(json['net'] as String? ?? '') ?? DateTime.now(),
       statusName: status?['name'] as String? ?? 'Unknown',
-      rocketName: fullRocketName ?? (fallbackRocketName.isEmpty ? 'Unknown rocket' : fallbackRocketName),
+      rocketName: fullRocketName ?? 'Unknown rocket',
       padName: pad?['name'] as String? ?? 'Unknown pad',
       locationName: location?['name'] as String? ?? 'Unknown location',
       missionDescription: mission?['description'] as String?,
