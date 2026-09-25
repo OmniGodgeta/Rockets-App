@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 
@@ -38,6 +39,13 @@ class _RadarScreenState extends State<RadarScreen> {
   List<_RadarFrame> _frames = [];
   String? _radarHost;
   int _frameIndex = 0;
+  Timer? _animationTimer;
+
+  @override
+  void dispose() {
+    _animationTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -219,6 +227,35 @@ class _RadarScreenState extends State<RadarScreen> {
                         fontSize: 13,
                       ),
                     ),
+                    IconButton(
+                      icon: Icon(
+                        _animationTimer == null
+                            ? Icons.play_arrow
+                            : Icons.pause,
+                        color: AppTheme.accent,
+                      ),
+                      onPressed: () {
+                        if (_animationTimer == null) {
+                          _animationTimer = Timer.periodic(
+                            const Duration(milliseconds: 400),
+                            (_) {
+                              setState(() {
+                                if (_frameIndex < _frames.length - 1) {
+                                  _frameIndex++;
+                                } else {
+                                  _frameIndex = 0;
+                                }
+                              });
+                            },
+                          );
+                        } else {
+                          setState(() {
+                            _animationTimer?.cancel();
+                            _animationTimer = null;
+                          });
+                        }
+                      },
+                    ),
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         activeTrackColor: AppTheme.accent,
@@ -227,13 +264,17 @@ class _RadarScreenState extends State<RadarScreen> {
                         overlayColor: AppTheme.accent.withValues(alpha: 0.2),
                       ),
                       child: Slider(
-                        value: _frameIndex.toDouble(),
-                        min: 0,
-                        max: (_frames.length - 1).toDouble(),
-                        divisions: _frames.length > 1 ? _frames.length - 1 : 1,
-                        onChanged: (value) =>
-                            setState(() => _frameIndex = value.round()),
-                      ),
+   value: _frameIndex.toDouble(),
+   min: 0,
+   max: (_frames.length - 1).toDouble(),
+   divisions: _frames.length > 1 ? _frames.length - 1 : 1,
+   onChanged: (value) {
+     setState(() {
+       _frameIndex = value.round();
+       _animationTimer?.cancel();
+     });
+   },
+ ),
                     ),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -245,6 +286,29 @@ class _RadarScreenState extends State<RadarScreen> {
                             style: TextStyle(
                                 color: Colors.white54, fontSize: 10)),
                       ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.open_in_new, size: 16),
+                        label: const Text(
+                          'MORE LAYERS (WIND, TEMP) ON WINDY.COM',
+                          style: TextStyle(fontSize: 10),
+                        ),
+                        onPressed: () async {
+                          final lat = _center.latitude.toStringAsFixed(4);
+                          final lon = _center.longitude.toStringAsFixed(4);
+                          final url = Uri.parse('https://www.windy.com/?$lat,$lon,7');
+                          if (await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                            // success
+                          } else {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not open Windy.com')),
+                            );
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
