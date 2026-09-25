@@ -1,5 +1,41 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.1] - 2026-09-25
+
+Second round of fixes on top of v1.2.0, from real follow-up feedback.
+
+### Fixed
+
+- ISS Live Now trajectory: two differently-styled polylines (a dotted
+  future segment) looked like clutter rather than one clean orbit line.
+  Merged into a single continuous, solid track.
+- Rocket Scales: the real photo now IS the accurately-scaled element
+  (previously a small circular badge floating above a generic vector
+  "spike"), anchored to a shared ground baseline across every rocket - the
+  badge's old position, coupled to each rocket's own height, is why they
+  looked misaligned.
+- Scale of the Universe: fixed a real async race where swiping the slider
+  quickly could let a stale, out-of-order network response overwrite the
+  current item's photo with a different item's photo.
+- Space Live / Rocket History: added a fallback "Open in YouTube" button for
+  when in-app playback fails, since the reported error didn't match any
+  documented YouTube IFrame API code and couldn't be reproduced without a
+  device.
+- Weather Radar: fixed a stale "OpenStreetMap" attribution label left over
+  from the Esri satellite-imagery basemap swap.
+
+### Added
+
+- ISS Live Now: a visibility footprint circle (the ground region the ISS is
+  currently above the horizon from - real satellite-footprint geometry, not
+  a guessed radius), and the map now actually follows the ISS as it moves
+  (it only ever centered once, at load, before this).
+- ISS Live Now: zoom in/out/recenter buttons and a follow/unfollow toggle -
+  there were no map controls at all before.
+- Weather Radar: an animate/play button that auto-advances through radar
+  frames, and a link out to Windy.com for wind/temperature layers (RainViewer's
+  free API only covers precipitation).
+
 ## [v1.2.0] - 2026-09-25
 
 Operator-reported polish pass across Weather Radar, Rocket Scales, Scale of
