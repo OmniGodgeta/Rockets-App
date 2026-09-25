@@ -11,6 +11,7 @@ class Launch {
   final String? missionDescription;
   final String? imageUrl;
   final String? webcastUrl;
+  final bool webcastIsFallback;
   final double? padLatitude;
   final double? padLongitude;
   final String providerName;
@@ -26,6 +27,7 @@ class Launch {
     this.missionDescription,
     this.imageUrl,
     this.webcastUrl,
+    this.webcastIsFallback = false,
     this.padLatitude,
     this.padLongitude,
     this.providerName = 'Unknown provider',
@@ -52,9 +54,23 @@ class Launch {
     final provider = json['launch_service_provider'] as Map<String, dynamic>?;
 
     final fullRocketName = configuration?['full_name'] as String?;
+    final providerName = provider?['name'] as String? ?? 'Unknown provider';
 
     // Starship fallback removed as it is no longer needed; SpaceX Starship launches
     // correctly appear in the rocket configuration field in recent LL2 API responses.
+    String? webcastUrl = (vidUrls != null && vidUrls.isNotEmpty)
+        ? vidUrls.first['url'] as String?
+        : null;
+    bool webcastIsFallback = false;
+    // LL2's vidURLs is usually empty for SpaceX: they stream on X, not
+    // YouTube, so there's rarely a per-launch video entry for the API to
+    // surface. Fall back to their known livestream sources rather than
+    // showing no watch link at all for the provider that launches most often.
+    if (webcastUrl == null && providerName.toLowerCase().contains('spacex')) {
+      webcastUrl = 'https://x.com/SpaceX';
+      webcastIsFallback = true;
+    }
+
     return Launch(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Unnamed launch',
@@ -65,12 +81,11 @@ class Launch {
       locationName: location?['name'] as String? ?? 'Unknown location',
       missionDescription: mission?['description'] as String?,
       imageUrl: json['image'] as String?,
-      webcastUrl: (vidUrls != null && vidUrls.isNotEmpty)
-          ? vidUrls.first['url'] as String?
-          : null,
+      webcastUrl: webcastUrl,
+      webcastIsFallback: webcastIsFallback,
       padLatitude: double.tryParse(pad?['latitude'] as String? ?? ''),
       padLongitude: double.tryParse(pad?['longitude'] as String? ?? ''),
-      providerName: provider?['name'] as String? ?? 'Unknown provider',
+      providerName: providerName,
     );
   }
 
@@ -86,6 +101,7 @@ class Launch {
       'missionDescription': missionDescription,
       'imageUrl': imageUrl,
       'webcastUrl': webcastUrl,
+      'webcastIsFallback': webcastIsFallback,
       'padLatitude': padLatitude,
       'padLongitude': padLongitude,
       'providerName': providerName,

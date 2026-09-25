@@ -2,6 +2,49 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.0.1 (2026-09-24) — refresh, countdown layout, SpaceX livestream fix
+
+Three more real bugs from on-device testing of v1.0.0, fixed and verified by
+the Claude Code supervisor:
+
+- **Pull-to-refresh always said "No upcoming launches found"** — root cause
+  confirmed directly against the live API: Launch Library 2 rate-limits
+  anonymous access (`curl` reproduced `HTTP 429 "Request was throttled"` on
+  a plain `?limit=150` request). `LaunchRepository.fetchUpcoming()` treated
+  any non-200 response identically to "the API genuinely has zero upcoming
+  launches" and returned an empty list, silently discarding the perfectly
+  good cache it already had. Fixed: the live fetch now pages in chunks of
+  100 (LL2's real page cap) and, on any failure, falls back to the existing
+  cache instead of returning empty; only throws if there's no cache at all.
+  `RocketsScreen._refresh()` now shows a snackbar
+  ("...showing the last cached results") when a fallback happened, instead
+  of pretending the refresh succeeded with fresh data.
+- **Countdown was unreadable — root-caused, not just restyled.** The
+  operator's screenshot showed the launch date rendered one character per
+  line down the entire card. Diagnosed as a real Flutter layout bug, not a
+  styling issue: `RocketCountdown`'s inner `Row` had no `mainAxisSize`
+  (defaults to `.max`) and sat as a **non-flex sibling of an `Expanded`** in
+  the list card's outer `Row`. Non-flex children are sized before flex
+  children get their share, so the countdown's `Row` (wanting to be as wide
+  as possible) claimed nearly the entire card width, squeezing the
+  `Expanded` title/date column down to near-zero — which forces Flutter to
+  wrap that column's `Text` one character per line. Fixed in
+  `rocket_countdown.dart`: added `mainAxisSize: MainAxisSize.min` throughout,
+  and added a `compact` mode (a small single-line pill, e.g. "5d 04h 12m")
+  used in list rows instead of reusing the full 4-box DAYS/HRS/MIN/SEC
+  display meant for the full-width detail screen — that display was never
+  designed to share a row with other flexible content.
+- **SpaceX livestream link** — a real "WATCH LIVESTREAM" button already
+  existed (parses LL2's `vidURLs`), but LL2 rarely has an entry for SpaceX
+  launches since they stream on X, not YouTube. Added a fallback in
+  `Launch.fromJson()`: when a SpaceX launch has no `vidURLs` entry, link to
+  `https://x.com/SpaceX` instead, with the button/badge relabeled
+  ("FOLLOW SPACEX ON X" / "ON X") via a new `webcastIsFallback` flag so it's
+  not presented as if it were a real per-launch stream link.
+
+Verified: `flutter analyze` (0 errors, same 2 pre-existing cosmetic `info`
+lints), `flutter test` (1/1 passing), `flutter build apk --debug` succeeds.
+
 ## v1.0.0 (2026-09-24) — first stable release
 
 Closed out the remaining "known but unbuilt" suggestions and shipped as

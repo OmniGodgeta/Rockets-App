@@ -108,8 +108,11 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _openWebcast,
-              icon: const Icon(Icons.live_tv),
-              label: const Text('WATCH LIVESTREAM'),
+              icon: Icon(
+                  launch.webcastIsFallback ? Icons.alternate_email : Icons.live_tv),
+              label: Text(launch.webcastIsFallback
+                  ? 'FOLLOW ${launch.providerName.toUpperCase()} ON X'
+                  : 'WATCH LIVESTREAM'),
             ),
           ],
           if (launch.padLatitude != null && launch.padLongitude != null) ...[

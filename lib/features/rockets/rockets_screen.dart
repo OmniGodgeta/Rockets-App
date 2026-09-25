@@ -58,10 +58,24 @@ class _RocketsScreenState extends State<RocketsScreen> {
     // useCache: false - pull-to-refresh must force a real network fetch.
     // Without this it was silently re-reading the same cached data and
     // doing nothing visible to the user.
+    final future = _repository.fetchUpcoming(useCache: false);
     setState(() {
-      _launchesFuture = _repository.fetchUpcoming(useCache: false);
+      _launchesFuture = future;
     });
-    await _launchesFuture;
+    await future;
+    // The Launch Library 2 API rate-limits anonymous access (verified: a
+    // plain refetch can return HTTP 429). When that happens the repository
+    // falls back to cached data instead of showing an empty list - let the
+    // user know the list they're seeing wasn't actually refreshed.
+    if (mounted && _repository.lastFetchUsedCacheFallback) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Launch data provider is rate-limiting requests right now - '
+              'showing the last cached results.'),
+        ),
+      );
+    }
   }
 
   @override
@@ -277,13 +291,20 @@ class _LaunchCard extends StatelessWidget {
                         ),
                         if (launch.webcastUrl != null) ...[
                           const SizedBox(height: 6),
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.live_tv,
-                                  size: 14, color: Colors.redAccent),
-                              SizedBox(width: 4),
-                              Text('LIVESTREAM',
-                                  style: TextStyle(
+                              Icon(
+                                  launch.webcastIsFallback
+                                      ? Icons.alternate_email
+                                      : Icons.live_tv,
+                                  size: 14,
+                                  color: Colors.redAccent),
+                              const SizedBox(width: 4),
+                              Text(
+                                  launch.webcastIsFallback
+                                      ? 'ON X'
+                                      : 'LIVESTREAM',
+                                  style: const TextStyle(
                                       color: Colors.redAccent,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700)),
@@ -294,7 +315,10 @@ class _LaunchCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                RocketCountdown(net: launch.net),
+                Padding(
+                  padding: const EdgeInsets.only(right: 12, top: 12),
+                  child: RocketCountdown(net: launch.net, compact: true),
+                ),
               ],
             ),
           ],
