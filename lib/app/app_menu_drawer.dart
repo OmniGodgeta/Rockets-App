@@ -8,6 +8,7 @@ import '../../features/rocket_scale/rocket_scale_screen.dart';
 import '../../features/scale/scale_screen.dart';
 import '../../features/satellites/iss_live_now_screen.dart';
 import '../../features/apod/apod_screen.dart';
+import '../../features/history/rocket_history_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/space_live/space_live_screen.dart';
 import '../../data/settings_repository.dart';
@@ -29,15 +30,19 @@ class AppMenuDrawer extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
+            Container(
+              height: 88,
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              alignment: Alignment.bottomLeft,
+              decoration: const BoxDecoration(
                 color: AppTheme.surface,
               ),
-              child: Text(
+              child: const Text(
                 'Rockets',
                 style: TextStyle(
                   color: AppTheme.textPrimary,
-                  fontSize: 32,
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -153,7 +158,7 @@ class AppMenuDrawer extends StatelessWidget {
               leading:
                   const Icon(Icons.image_outlined, color: AppTheme.textPrimary),
               title: const Text(
-                'Picture of the Day',
+                'Gallery',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
               onTap: () {
@@ -161,6 +166,22 @@ class AppMenuDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const ApodScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading:
+                  const Icon(Icons.history_edu, color: AppTheme.textPrimary),
+              title: const Text(
+                'Rocket History',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const RocketHistoryScreen()),
                 );
               },
             ),

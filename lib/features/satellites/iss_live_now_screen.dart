@@ -35,6 +35,8 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   DateTime? _nextPass;
   String? _error;
   bool _loading = true;
+  List<LatLng> _trackPast = [];
+  List<LatLng> _trackFuture = [];
 
   @override
   void initState() {
@@ -83,8 +85,10 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   void _updatePosition() {
     final iss = _iss;
     if (iss == null || !mounted) return;
-    final pos = OrbitUtils.getSatellitePosition(iss, DateTime.now().toUtc());
+    final now = DateTime.now().toUtc();
+    final pos = OrbitUtils.getSatellitePosition(iss, now);
     setState(() => _issPosition = pos);
+    _computeTrack(iss, now);
 
     final userLoc = _userLocation;
     if (userLoc != null) {
@@ -96,6 +100,55 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
       );
       if (mounted) setState(() => _nextPass = nextPass);
     }
+  }
+
+  /// Ground track: the ISS's own past/future path, sampled every 30s across
+  /// a 45-minute window each way (a full ISS orbit is ~92 min). Longitude
+  /// wraps at +/-180deg, so a single Polyline would draw a bogus line clear
+  /// across the map at each wrap - split into segments there instead.
+  void _computeTrack(Satellite iss, DateTime now) {
+    const sampleEvery = Duration(seconds: 30);
+    const window = Duration(minutes: 45);
+
+    List<LatLng> sample(bool forward) {
+      final points = <LatLng>[];
+      var steps = window.inSeconds ~/ sampleEvery.inSeconds;
+      for (var i = 0; i <= steps; i++) {
+        final t = forward
+            ? now.add(sampleEvery * i)
+            : now.subtract(sampleEvery * i);
+        final p = OrbitUtils.getSatellitePosition(iss, t);
+        points.add(LatLng(p['lat']!, p['lon']!));
+      }
+      return forward ? points : points.reversed.toList();
+    }
+
+    if (mounted) {
+      setState(() {
+        _trackPast = sample(false);
+        _trackFuture = sample(true);
+      });
+    }
+  }
+
+  /// Splits a track into segments wherever consecutive points cross the
+  /// antimeridian, so flutter_map never draws a straight line all the way
+  /// across the map at a longitude wrap.
+  static List<List<LatLng>> _splitAtAntimeridian(List<LatLng> points) {
+    if (points.isEmpty) return [];
+    final segments = <List<LatLng>>[];
+    var current = <LatLng>[points.first];
+    for (var i = 1; i < points.length; i++) {
+      final prev = points[i - 1];
+      final curr = points[i];
+      if ((curr.longitude - prev.longitude).abs() > 180) {
+        segments.add(current);
+        current = [];
+      }
+      current.add(curr);
+    }
+    segments.add(current);
+    return segments;
   }
 
   String _formatNextPass() {
@@ -152,10 +205,31 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                     maxZoom: 8,
                   ),
                   children: [
+                    // Real satellite photography of the Earth instead of a
+                    // vector line-art map, per the operator's ask for a
+                    // "realistic" map here.
                     TileLayer(
                       urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                       userAgentPackageName: 'com.rockets.app',
+                    ),
+                    PolylineLayer(
+                      polylines: [
+                        for (final segment in _splitAtAntimeridian(_trackPast))
+                          Polyline(
+                            points: segment,
+                            color: Colors.redAccent.withValues(alpha: 0.45),
+                            strokeWidth: 2,
+                          ),
+                        for (final segment
+                            in _splitAtAntimeridian(_trackFuture))
+                          Polyline(
+                            points: segment,
+                            color: Colors.redAccent.withValues(alpha: 0.85),
+                            strokeWidth: 2,
+                            pattern: const StrokePattern.dotted(),
+                          ),
+                      ],
                     ),
                     MarkerLayer(
                       markers: [

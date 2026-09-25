@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:sensors_plus/sensors_plus.dart';
 
 import '../../app/theme.dart';
 import '../../models/satellite_model.dart';
@@ -23,9 +24,13 @@ class CompassScreen extends StatefulWidget {
 class _CompassScreenState extends State<CompassScreen> {
   double? _heading;
   double? _targetAzimuth;
+  double? _targetElevation;
+  double? _devicePitch;
   Position? _userLocation;
   bool _isInitializing = true;
   StreamSubscription<CompassEvent>? _compassSubscription;
+  StreamSubscription<AccelerometerEvent>? _accelSubscription;
+  Timer? _lookAngleTimer;
 
   @override
   void initState() {
@@ -36,6 +41,8 @@ class _CompassScreenState extends State<CompassScreen> {
   @override
   void dispose() {
     _compassSubscription?.cancel();
+    _accelSubscription?.cancel();
+    _lookAngleTimer?.cancel();
     super.dispose();
   }
 
@@ -61,17 +68,24 @@ class _CompassScreenState extends State<CompassScreen> {
         _userLocation = position;
       });
 
-      // 2. Start Compass Stream
+      // 2. Start Compass Stream (horizontal heading)
       _compassSubscription = FlutterCompass.events?.listen((event) {
         setState(() {
           _heading = event.heading;
         });
-        _updateTargetAzimuth();
       });
 
-      // 3. Initial calculation for azimuth
-      _updateTargetAzimuth();
+      // 3. Start Accelerometer Stream (device pitch, for the vertical axis
+      // the compass never had before)
+      _accelSubscription =
+          accelerometerEventStream().listen(_onAccelerometerEvent);
 
+      // 4. Satellite look angle (azimuth + elevation) barely changes over a
+      // couple of seconds, so it's recomputed on a timer rather than on
+      // every sensor tick.
+      _updateLookAngle();
+      _lookAngleTimer = Timer.periodic(
+          const Duration(seconds: 2), (_) => _updateLookAngle());
     } catch (e) {
       debugPrint('Error initializing compass screen: $e');
     } finally {
@@ -81,34 +95,40 @@ class _CompassScreenState extends State<CompassScreen> {
     }
   }
 
-  void _updateTargetAzimuth() async {
+  // Exponential smoothing so the pitch reading isn't jittery from raw
+  // accelerometer noise.
+  double? _smoothedPitch;
+
+  void _onAccelerometerEvent(AccelerometerEvent event) {
+    // Device held vertically, portrait, pointed at the target (typical
+    // "AR camera" grip): y runs along the phone's long axis (up/down when
+    // held upright), z is out of the screen. Tilting the top of the phone
+    // up (aiming higher) reduces z and increases -y, hence atan2(-y, z).
+    // Needs on-device confirmation - accelerometer axis conventions can
+    // differ enough between phones that the sign may need flipping.
+    final rawPitch = math.atan2(-event.y, event.z) * (180 / math.pi);
+    final smoothed = _smoothedPitch == null
+        ? rawPitch
+        : _smoothedPitch! + 0.15 * (rawPitch - _smoothedPitch!);
+    _smoothedPitch = smoothed;
+    setState(() => _devicePitch = smoothed);
+  }
+
+  void _updateLookAngle() {
     final pos = _userLocation;
-    final heading = _heading;
-    final sat = widget.satellite;
-
-    if (pos == null || heading == null) return;
-
-    try {
-      // Get current satellite position via SGP4 propagation
-      final now = DateTime.now().toUtc();
-
-      final satPosMap = OrbitUtils.getSatellitePosition(sat, now);
-      final satLat = satPosMap['lat']!;
-      final satLon = satPosMap['lon']!;
-
-      final azimuth = OrbitUtils.calculateAzimuth(
-        pos.latitude,
-        pos.longitude,
-        satLat,
-        satLon,
-      );
-
-      setState(() {
-        _targetAzimuth = azimuth;
-      });
-    } catch (e) {
-      debugPrint('Error calculating azimuth: $e');
-    }
+    if (pos == null) return;
+    final result = OrbitUtils.getLookAngle(
+      widget.satellite,
+      pos.latitude,
+      pos.longitude,
+      pos.altitude / 1000,
+      DateTime.now().toUtc(),
+    );
+    if (result == null) return;
+    setState(() {
+      _targetAzimuth = result['azimuth'];
+      _targetElevation = result['elevation'];
+    });
   }
 
   @override
@@ -145,8 +165,15 @@ class _CompassScreenState extends State<CompassScreen> {
 
     final double heading = _heading!;
     final double azimuth = _targetAzimuth!;
+    final double? elevation = _targetElevation;
+    final double? pitch = _devicePitch;
     // The direction the user should turn to face the satellite is (azimuth - heading)
     final double relativeBearing = (azimuth - heading + 360) % 360;
+    final bool azimuthAligned = relativeBearing < 5 || relativeBearing > 355;
+    final double? pitchDelta =
+        (elevation != null && pitch != null) ? elevation - pitch : null;
+    final bool elevationAligned =
+        pitchDelta == null ? true : pitchDelta.abs() < 5;
 
     return Stack(
       alignment: Alignment.center,
@@ -156,7 +183,7 @@ class _CompassScreenState extends State<CompassScreen> {
           angle: -heading * (math.pi / 180),
           child: _buildCompassRing(),
         ),
-        
+
         // Target Needle/Arrow
         Transform.rotate(
           angle: relativeBearing * (math.pi / 180),
@@ -166,6 +193,16 @@ class _CompassScreenState extends State<CompassScreen> {
             size: 48,
           ),
         ),
+
+        // Vertical elevation gauge - the compass's missing "up/down" axis.
+        // Shows where the satellite sits above/below the horizon (elevation)
+        // against the phone's own current tilt (pitch); the marker lands in
+        // the middle only once the phone is pointed at the right height.
+        if (pitchDelta != null)
+          Positioned(
+            right: 24,
+            child: _ElevationGauge(pitchDelta: pitchDelta),
+          ),
 
         // UI Info Overlay
         Positioned(
@@ -181,11 +218,23 @@ class _CompassScreenState extends State<CompassScreen> {
                 'HEADING: ${heading.toStringAsFixed(1)}°',
                 style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
               ),
+              if (elevation != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'ELEVATION: ${elevation.toStringAsFixed(1)}°'
+                  '${elevation < 0 ? ' (below horizon)' : ''}',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                ),
+              ],
               const SizedBox(height: 24),
               Text(
-                relativeBearing < 5 || relativeBearing > 355 
-                    ? 'POINT AT SATELLITE!' 
-                    : 'TURN TO FACE',
+                azimuthAligned && elevationAligned
+                    ? 'POINT AT SATELLITE!'
+                    : !azimuthAligned
+                        ? 'TURN TO FACE'
+                        : (pitchDelta ?? 0) > 0
+                            ? 'TILT UP'
+                            : 'TILT DOWN',
                 style: const TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.w900),
               ),
             ],
@@ -228,6 +277,53 @@ class _CompassScreenState extends State<CompassScreen> {
             Container(width: 2, height: 10, color: AppTheme.accent),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A vertical gauge: the marker sits in the middle band once the phone's
+/// current tilt (pitch) matches the satellite's elevation above the
+/// horizon. [pitchDelta] is elevation-minus-pitch in degrees, clamped to
+/// +/-45deg of travel on the gauge.
+class _ElevationGauge extends StatelessWidget {
+  final double pitchDelta;
+
+  const _ElevationGauge({required this.pitchDelta});
+
+  @override
+  Widget build(BuildContext context) {
+    const trackHeight = 200.0;
+    const maxDelta = 45.0;
+    final clamped = pitchDelta.clamp(-maxDelta, maxDelta);
+    // Positive delta (target above current pitch) moves the marker up.
+    final offsetY = -(clamped / maxDelta) * (trackHeight / 2);
+    final aligned = pitchDelta.abs() < 5;
+
+    return SizedBox(
+      height: trackHeight,
+      width: 36,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 4,
+            height: trackHeight,
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceBorder,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Icon(Icons.remove, color: AppTheme.textSecondary, size: 20),
+          Transform.translate(
+            offset: Offset(0, offsetY),
+            child: Icon(
+              Icons.arrow_left,
+              color: aligned ? Colors.greenAccent : Colors.redAccent,
+              size: 32,
+            ),
+          ),
+        ],
       ),
     );
   }

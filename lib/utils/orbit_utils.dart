@@ -67,6 +67,44 @@ class OrbitUtils {
     return (azimuth + 360) % 360;
   }
 
+  /// Full look angle (azimuth AND elevation, both in degrees) from a user
+  /// location to a satellite at a given time, using the same sgp4_sdp4
+  /// Site.getLookAngle already relied on by calculateNextPass. Elevation is
+  /// how far above (positive) or below (negative) the horizon the satellite
+  /// is - the piece the simple azimuth-only calculateAzimuth() can't give,
+  /// needed for the compass's vertical/pitch indicator.
+  static Map<String, double>? getLookAngle(
+    Satellite satellite,
+    double userLat,
+    double userLon,
+    double userAltKm,
+    DateTime time,
+  ) {
+    try {
+      final tle = TLE(satellite.name, satellite.tleLine1, satellite.tleLine2);
+      final orbit = Orbit(tle);
+      final t = time.toUtc();
+      final julian = Julian.fromFullDate(
+        t.year,
+        t.month,
+        t.day,
+        t.hour,
+        t.minute,
+        sec: t.second + (t.millisecond / 1000.0),
+      );
+      final tSince = orbit.tPlusEpoch(julian);
+      final eciPos = orbit.getPosition(tSince);
+      final site = Site.fromLatLngAlt(userLat, userLon, userAltKm);
+      final lookAngle = site.getLookAngle(eciPos);
+      return {
+        'azimuth': (lookAngle.az * 180.0 / pi + 360) % 360,
+        'elevation': lookAngle.el * 180.0 / pi,
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Calculates when a satellite will next pass overhead given user location.
   /// This is improved from a simple altitude check to use Site.getLookAngle for actual visibility.
   static DateTime? calculateNextPass(Satellite satellite, double userLat, double userLon, double userAltKm) {

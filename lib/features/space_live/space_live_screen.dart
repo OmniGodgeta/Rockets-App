@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/theme.dart';
 
@@ -11,14 +11,20 @@ import '../../app/theme.dart';
 /// Its official successor is NASA's own ongoing live HD stream from an
 /// external ISS camera, so that's what this screen shows.
 ///
+/// Rebuilt on youtube_player_iframe instead of a raw WebViewController
+/// pointed straight at a youtube-nocookie.com embed URL - that approach hit
+/// YouTube error 153 ("requested video cannot be played in an embedded
+/// player") because a bare loadRequest() never establishes a valid HTTP
+/// origin for YouTube's embed-origin check the way the IFrame Player API
+/// (which this package wraps correctly, including origin/enablejsapi) does.
+///
 /// Note on ads: this is a real, official NASA-run YouTube stream (video id
 /// awQzjn72bI0, "Live High-Definition Views from the International Space
-/// Station"), embedded via youtube-nocookie.com with related videos and
-/// branding suppressed. Whether YouTube shows an ad before it plays is
-/// controlled by YouTube/the channel at the player level and can't be
-/// suppressed from an embed - unlike Weather Radar and ISS Live Now, this
-/// screen can't be made fully native without standing up our own video
-/// relay, so it isn't a "0 ads" guarantee the way those two are.
+/// Station"). Whether YouTube shows an ad before it plays is controlled by
+/// YouTube/the channel at the player level and can't be suppressed from an
+/// embed - unlike Weather Radar and ISS Live Now, this screen can't be made
+/// fully native without standing up our own video relay, so it isn't a
+/// "0 ads" guarantee the way those two are.
 class SpaceLiveScreen extends StatefulWidget {
   const SpaceLiveScreen({super.key});
 
@@ -28,16 +34,26 @@ class SpaceLiveScreen extends StatefulWidget {
 
 class _SpaceLiveScreenState extends State<SpaceLiveScreen> {
   static const _videoId = 'awQzjn72bI0';
-  late final WebViewController _controller;
+  late final YoutubePlayerController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..loadRequest(Uri.parse(
-          'https://www.youtube-nocookie.com/embed/$_videoId?autoplay=1&playsinline=1&rel=0&modestbranding=1'));
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: _videoId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        showControls: true,
+        showFullscreenButton: true,
+        playsInline: true,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.close();
+    super.dispose();
   }
 
   @override
@@ -52,7 +68,7 @@ class _SpaceLiveScreenState extends State<SpaceLiveScreen> {
       body: Column(
         children: [
           Expanded(
-            child: WebViewWidget(controller: _controller),
+            child: YoutubePlayer(controller: _controller),
           ),
           const Padding(
             padding: EdgeInsets.all(12),
