@@ -38,12 +38,24 @@ class Launch {
     final status = json['status'] as Map<String, dynamic>?;
     final vidUrls = json['vidURLs'] as List<dynamic>?;
 
+    final fullRocketName = configuration?['full_name'] as String?;
+
+    // Starship fallback: some results have null rocket name/config but describe it in 'mission'.
+    // Or the LL2 API might be inconsistent for test flights.
+    String fallbackRocketName = '';
+    if (fullRocketName == null || fullRocketName == 'Unknown rocket') {
+      final desc = mission?['description'] as String? ?? '';
+      if (desc.toLowerCase().contains('starship')) {
+        fallbackRocketName = 'Starship';
+      }
+    }
+
     return Launch(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? 'Unnamed launch',
       net: DateTime.tryParse(json['net'] as String? ?? '') ?? DateTime.now(),
       statusName: status?['name'] as String? ?? 'Unknown',
-      rocketName: configuration?['full_name'] as String? ?? 'Unknown rocket',
+      rocketName: fullRocketName ?? (fallbackRocketName.isEmpty ? 'Unknown rocket' : fallbackRocketName),
       padName: pad?['name'] as String? ?? 'Unknown pad',
       locationName: location?['name'] as String? ?? 'Unknown location',
       missionDescription: mission?['description'] as String?,

@@ -41,7 +41,10 @@ class LaunchRepository {
             if (launches.length >= limit) break;
           }
 
-          if (launches.isNotEmpty) return launches;
+          if (launches.isNotEmpty) {
+            launches.sort((a, b) => a.net.compareTo(b.net));
+            return launches;
+          }
         } catch (e) {
           debugPrint('Error reading LaunchRepository cache: $e');
           await _cacheBox.clear();
@@ -51,27 +54,39 @@ class LaunchRepository {
       }
     }
 
-    final uri = Uri.parse('$_baseUrl/launch/upcoming/?limit=$limit');
-    final response = await http.get(uri);
-    if (response.statusCode != 200) {
-      throw Exception('Launch Library request failed: ${response.statusCode}');
-    }
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final results = body['results'] as List<dynamic>? ?? [];
+    final List<Map<String, dynamic>> allMaps = [];
+    String? nextUrl = '$_baseUrl/launch/upcoming/?limit=$limit';
 
-    if (results.isNotEmpty) {
+    while (nextUrl != null && allMaps.length < limit) {
+      final response = await http.get(Uri.parse(nextUrl));
+      if (response.statusCode != 200) break;
+      
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final resultsList = body['results'] as List<dynamic>? ?? [];
+      
+      for (var result in resultsList) {
+        if (allMaps.length >= limit) break;
+        allMaps.add(result as Map<String, dynamic>);
+      }
+      nextUrl = body['next'];
+    }
+
+    final launches = allMaps
+        .map((map) => Launch.fromJson(map))
+        .toList();
+
+    // Sort chronologically by launch date (net) ascending
+    launches.sort((a, b) => a.net.compareTo(b.net));
+
+    if (launches.isNotEmpty) {
       await _cacheBox.clear();
       await _cacheBox.put('cache_version', _currentCacheVersion);
-      for (var result in results) {
-        final map = result as Map<String, dynamic>;
+      for (var map in allMaps) {
         final id = map['id'] as String;
-        // Store the raw JSON object to preserve nesting for Launch.fromJson()
-        await _cacheBox.put(id, jsonEncode(result));
+        await _cacheBox.put(id, jsonEncode(map));
       }
     }
 
-    return results
-        .map((json) => Launch.fromJson(json as Map<String, dynamic>))
-        .toList();
+    return launches;
   }
 }

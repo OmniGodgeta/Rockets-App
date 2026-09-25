@@ -65,11 +65,20 @@ class _RocketCountdownState extends State<RocketCountdown> {
     return Column(
       children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _TimeUnit(value: days, label: 'DAYS'),
+            const SizedBox(width: 20),
+            const Text(':', style: TextStyle(fontSize: 28, color: AppTheme.textSecondary)),
+            const SizedBox(width: 20),
             _TimeUnit(value: hours, label: 'HRS'),
+            const SizedBox(width: 20),
+            const Text(':', style: TextStyle(fontSize: 28, color: AppTheme.textSecondary)),
+            const SizedBox(width: 20),
             _TimeUnit(value: minutes, label: 'MIN'),
+            const SizedBox(width: 20),
+            const Text(':', style: TextStyle(fontSize: 28, color: AppTheme.textSecondary)),
+            const SizedBox(width: 20),
             _TimeUnit(value: seconds, label: 'SEC'),
           ],
         ),
