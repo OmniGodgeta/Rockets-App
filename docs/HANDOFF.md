@@ -2,7 +2,11 @@
 
 **Read this first if you're picking up work on this app.**
 
-## v1.0.1 (2026-09-24) — refresh, countdown layout, SpaceX livestream fix
+## v1.0.2 (2026-09-24) — refresh, countdown layout, SpaceX livestream fix
+
+(Shipped as GitHub release `v1.0.2`, not `v1.0.1` — a stray `v1.0.1` tag
+already existed on this repo from before `v1.0.0` ever shipped, leftover
+from earlier agent experimentation. Ignore it.)
 
 Three more real bugs from on-device testing of v1.0.0, fixed and verified by
 the Claude Code supervisor:
