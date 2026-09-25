@@ -3,6 +3,15 @@
          embedded Satellites/Solar System webviews. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Required for satellite/ISS compass bearing, "next pass" calculation,
+         and centering the weather radar on the user - confirmed missing
+         entirely (checked the merged manifest directly): geolocator_android's
+         own plugin manifest does NOT declare these, by design the consuming
+         app must. Without them, every Permission.location.request() call in
+         this app was silently doomed to fail on a real device; this was
+         never just a "nice to have" left for later. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <application
         android:label="rockets"
         android:name="${applicationName}"

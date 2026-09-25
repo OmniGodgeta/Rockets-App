@@ -3,13 +3,16 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz;
 import '../models/launch.dart';
+import 'settings_repository.dart';
 
 class LaunchNotificationService {
-  static final LaunchNotificationService _instance = LaunchNotificationService._internal();
+  static final LaunchNotificationService _instance =
+      LaunchNotificationService._internal();
   factory LaunchNotificationService() => _instance;
   LaunchNotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
   bool _initialized = false;
 
   Future<void> initialize() async {
@@ -23,18 +26,26 @@ class LaunchNotificationService {
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    const InitializationSettings settings = InitializationSettings(android: androidSettings);
+    const InitializationSettings settings =
+        InitializationSettings(android: androidSettings);
 
     await _notifications.initialize(settings);
     _initialized = true;
   }
 
   /// Schedules a notification for 15 minutes before the launch net time.
+  /// Silently does nothing if the user has turned launch alerts off in
+  /// Settings - the favorite itself still saves, it just won't page them.
   Future<void> scheduleNotification(Launch launch) async {
+    final settings = SettingsRepository();
+    await settings.init();
+    if (!settings.launchAlertsEnabled) return;
+
     if (!_initialized) await initialize();
 
     final netUtc = launch.net.toUtc();
-    final scheduledTime = tz.TZDateTime.from(netUtc.subtract(const Duration(minutes: 15)), tz.local);
+    final scheduledTime = tz.TZDateTime.from(
+        netUtc.subtract(const Duration(minutes: 15)), tz.local);
     final now = tz.TZDateTime.now(tz.local);
 
     if (scheduledTime.isBefore(now)) return;

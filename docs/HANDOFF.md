@@ -2,6 +2,91 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.1.0 (2026-09-24) — adaptive layout, ad-free ISS/radar/universe, in-app livestreams, notification settings, missing location permission fixed
+
+A large round of fixes and features from real device feedback, done directly
+by the Claude Code supervisor:
+
+- **Bottom nav "UNIVERSE" wrapping to 2 lines on a Pixel 8** - root-caused:
+  Material's stock `NavigationBar`/`NavigationDestination` label doesn't
+  clip or scale, it just wraps like any other unconstrained `Text` once 6
+  destinations share a narrow width. Replaced with a custom
+  `_AdaptiveBottomNav` (`root_shell.dart`) that wraps each label in
+  `FittedBox(fit: BoxFit.scaleDown)` so it shrinks instead of wrapping, on
+  any screen width. Also clamped the app-wide system font-scale multiplier
+  (`main.dart`'s `MaterialApp.builder`) to 0.85–1.2x, since several
+  fixed-size layouts assume something close to the default scale.
+- **Hamburger menu no longer duplicates the bottom nav.** It previously
+  relisted Rockets/Satellites/Solar System/Galaxy/Universe/News as its own
+  tiles on top of the identical bottom nav tabs. Trimmed to just the items
+  that aren't already a tab.
+- **Scale of the Universe "doesn't load"** - root-caused: the embedded
+  htwins.net page loads fine over the network, but it's built for desktop
+  mouse-hover tutorial hints and an HTML `<dialog>` start screen that
+  doesn't reliably respond to touch in Android WebView - it was stuck on
+  its own start screen, not actually failing to load. It also serves a
+  Google AdSense banner. Replaced with a native slider through ~40 curated
+  reference sizes from the Planck length to the observable universe
+  (`data/universe_scale_data.dart`, `scale_screen.dart`) - no WebView, no
+  ads, works with touch.
+- **ISS Tracker rebuilt as "ISS Live Now", fully native.** It previously
+  just embedded a generic third-party "satellitemap.space" WebView showing
+  every satellite, unrelated to the operator's own location, with no
+  compass integration. Now: live ISS lat/lon/altitude on an OpenStreetMap
+  view (`flutter_map`), a real "next pass over you" estimate using the
+  existing SGP4 `OrbitUtils.calculateNextPass`, and a button straight into
+  the existing `CompassScreen` bearing tracker. Zero ads - no WebView at
+  all.
+- **Weather Radar rebuilt as native, ad-free.** The zoom.earth embed was
+  confirmed (by reading its actual page source) to serve both an
+  app-install nag modal *and* a Google AdSense banner - CSS/JS injection
+  could only ever chase specific class names, never guarantee zero ads from
+  a third party's page. Replaced with `flutter_map` (OpenStreetMap tiles)
+  + RainViewer's free public radar tile API (no key, no ads), centered on
+  the user's location or a launch pad when opened from a launch.
+- **New "Space Live" menu item.** NASA's original HDEV feed (what was
+  actually asked for by name) was retired in 2019; its official successor
+  is NASA's own ongoing live ISS HD camera stream, embedded full-screen via
+  `youtube-nocookie.com`. Documented honestly in `space_live_screen.dart`:
+  unlike ISS Live Now and Weather Radar, this one can't be a "0 ads"
+  guarantee - whether YouTube shows a pre-roll ad is controlled by
+  YouTube/the channel at the player level, not by the embed.
+- **In-app livestreams.** Launch detail's "Watch Livestream" button
+  (`launch_detail_screen.dart`) now opens a new `LivestreamScreen`
+  (`rockets/livestream_screen.dart`) instead of handing off to an external
+  browser/app - YouTube links get rewritten to an embeddable
+  `youtube-nocookie.com` player, anything else loads directly, still inside
+  the app.
+- **Live-launch popup on app open.** `RootShell` now checks on startup
+  whether any upcoming launch is `isHappeningNow` with a webcast available,
+  and if so offers a dialog straight into the in-app livestream player.
+- **Notification settings.** Settings screen gained a NOTIFICATIONS section
+  with two toggles: Launch Alerts (gates the existing favorited-launch
+  15-minute reminder, `launch_notification_service.dart`) and ISS Flyover
+  Alerts (new `iss_notification_service.dart` - computes the next visible
+  pass for the user's location via the existing `OrbitUtils` and schedules
+  a notification 5 minutes ahead; re-armed on every app start since a
+  "next pass" notification goes stale once that pass happens).
+- **Real bug found and fixed: location permissions were never declared at
+  all.** Checked the Gradle-merged manifest directly - `ACCESS_FINE_LOCATION`
+  /`ACCESS_COARSE_LOCATION` were completely absent. `geolocator_android`
+  does NOT declare these in its own plugin manifest (by design, the
+  consuming app must), and this app's `AndroidManifest.xml` never did
+  either. This means every `Permission.location.request()` call anywhere in
+  the app - the existing Satellites compass mode and Next Pass calculation
+  included - was silently doomed to fail on a real device before this fix.
+  Added both permissions to `android/app/src/main/AndroidManifest.xml`;
+  verified they now appear in the Gradle-merged manifest.
+
+Verified: `flutter analyze` (0 errors, same pre-existing cosmetic `info`
+lints plus a couple new ones in the same style, all harmless),
+`flutter test` (1/1 passing), `flutter build apk --release` succeeds.
+
+**Not independently verified on a physical device this round** (none
+available in this environment) - the location-permission fix and the new
+compass/next-pass/notification features in particular should get a real
+on-device pass before being trusted fully.
+
 ## v1.0.2 (2026-09-24) — refresh, countdown layout, SpaceX livestream fix
 
 (Shipped as GitHub release `v1.0.2`, not `v1.0.1` — a stray `v1.0.1` tag

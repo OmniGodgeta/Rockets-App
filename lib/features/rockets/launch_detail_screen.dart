@@ -1,13 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../data/favorite_repository.dart';
 import '../../models/launch.dart';
 import '../../features/radar/radar_screen.dart';
 import '../../utils/rocket_countdown.dart';
+import 'livestream_screen.dart';
 
 class LaunchDetailScreen extends StatefulWidget {
   const LaunchDetailScreen({super.key, required this.launch});
@@ -33,11 +33,14 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
     });
   }
 
-  Future<void> _openWebcast() async {
+  void _openWebcast() {
     final url = launch.webcastUrl;
     if (url == null) return;
-    final uri = Uri.parse(url);
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LivestreamScreen(url: url, title: launch.name),
+      ),
+    );
   }
 
   Future<void> _openRadar() async {
@@ -55,7 +58,8 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('EEEE, MMM d, y - HH:mm');
-    final isFavorite = _favoritesReady && _favoriteRepository.isLaunchFavorite(launch.id);
+    final isFavorite =
+        _favoritesReady && _favoriteRepository.isLaunchFavorite(launch.id);
     return Scaffold(
       appBar: AppBar(
         title: Text(launch.name.toUpperCase()),
@@ -65,7 +69,8 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
             onPressed: !_favoritesReady
                 ? null
                 : () async {
-                    await _favoriteRepository.toggleLaunchFavorite(launch.id, launch);
+                    await _favoriteRepository.toggleLaunchFavorite(
+                        launch.id, launch);
                     if (mounted) setState(() {});
                   },
           ),
@@ -80,17 +85,22 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
               child: CachedNetworkImage(
                 imageUrl: launch.imageUrl!,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                placeholder: (context, url) => const Center(
+                    child: CircularProgressIndicator(strokeWidth: 2)),
                 errorWidget: (context, url, error) => Container(
                   color: AppTheme.surfaceBorder,
-                  child: const Icon(Icons.rocket_launch, color: AppTheme.textSecondary, size: 48),
+                  child: const Icon(Icons.rocket_launch,
+                      color: AppTheme.textSecondary, size: 48),
                 ),
               ),
             ),
           const SizedBox(height: 16),
-          Text(launch.name.toUpperCase(), style: AppTheme.headline.copyWith(fontSize: 20)),
+          Text(launch.name.toUpperCase(),
+              style: AppTheme.headline.copyWith(fontSize: 20)),
           const SizedBox(height: 8),
-          Text(dateFormat.format(launch.net.toLocal()), style: const TextStyle(color: AppTheme.accent, fontWeight: FontWeight.w600)),
+          Text(dateFormat.format(launch.net.toLocal()),
+              style: const TextStyle(
+                  color: AppTheme.accent, fontWeight: FontWeight.w600)),
           const SizedBox(height: 16),
           RocketCountdown(net: launch.net),
           const SizedBox(height: 16),
@@ -98,18 +108,27 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
           _InfoRow(label: 'ROCKET', value: launch.rocketName),
           _InfoRow(label: 'PAD', value: launch.padName),
           _InfoRow(label: 'LOCATION', value: launch.locationName),
-          if (launch.missionDescription != null && launch.missionDescription!.isNotEmpty) ...[
+          if (launch.missionDescription != null &&
+              launch.missionDescription!.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('MISSION', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+            const Text('MISSION',
+                style: TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2)),
             const SizedBox(height: 6),
-            Text(launch.missionDescription!, style: const TextStyle(color: AppTheme.textPrimary, height: 1.4)),
+            Text(launch.missionDescription!,
+                style:
+                    const TextStyle(color: AppTheme.textPrimary, height: 1.4)),
           ],
           if (launch.webcastUrl != null) ...[
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _openWebcast,
-              icon: Icon(
-                  launch.webcastIsFallback ? Icons.alternate_email : Icons.live_tv),
+              icon: Icon(launch.webcastIsFallback
+                  ? Icons.alternate_email
+                  : Icons.live_tv),
               label: Text(launch.webcastIsFallback
                   ? 'FOLLOW ${launch.providerName.toUpperCase()} ON X'
                   : 'WATCH LIVESTREAM'),
@@ -144,12 +163,18 @@ class _InfoRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 90,
-            child: Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1)),
+            child: Text(label,
+                style: const TextStyle(
+                    color: AppTheme.textSecondary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1)),
           ),
-          Expanded(child: Text(value, style: const TextStyle(color: AppTheme.textPrimary))),
+          Expanded(
+              child: Text(value,
+                  style: const TextStyle(color: AppTheme.textPrimary))),
         ],
       ),
     );
   }
 }
-

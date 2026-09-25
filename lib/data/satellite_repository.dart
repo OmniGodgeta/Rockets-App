@@ -8,7 +8,9 @@ import '../models/satellite_model.dart';
 /// Fetches all active satellites from CelesTrak and parses TLEs.
 /// Implements local caching via Hive to allow offline operation.
 class SatelliteRepository {
-  static const _celestrakUrl = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle';
+  static const _celestrakUrl =
+      'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle';
+  static const String _issCatalogNumber = '25544';
   static const String _cacheBoxName = 'cached_satellites';
   static const String _currentCacheVersion = '1';
 
@@ -18,14 +20,36 @@ class SatelliteRepository {
     _cacheBox = await Hive.openBox<String>(_cacheBoxName);
   }
 
+  /// Fetches just the ISS's TLE via its own CelesTrak catalog-number query
+  /// (CATNR=25544), rather than the full active-satellite catalog (thousands
+  /// of entries) used elsewhere - the ISS Live Now screen only needs this one
+  /// satellite.
+  Future<Satellite> fetchIssSatellite() async {
+    final response = await http.get(Uri.parse(
+        'https://celestrak.org/NORAD/elements/gp.php?CATNR=$_issCatalogNumber&FORMAT=tle'));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to fetch ISS TLE: HTTP ${response.statusCode}');
+    }
+    final lines = response.body
+        .split('\n')
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+    if (lines.length < 3) {
+      throw Exception('Unexpected ISS TLE response');
+    }
+    return Satellite.fromTle(lines[0], _issCatalogNumber, lines[1], lines[2]);
+  }
+
   Future<List<Satellite>> fetchActiveSatellites({bool useCache = true}) async {
     if (useCache && _cacheBox.isNotEmpty) {
       final storedVersion = _cacheBox.get('cache_version');
       if (storedVersion == _currentCacheVersion) {
         try {
           // Use keys to avoid the metadata-in-values problem
-          final dataKeys = _cacheBox.keys.where((k) => k != 'cache_version').toList();
-          
+          final dataKeys =
+              _cacheBox.keys.where((k) => k != 'cache_version').toList();
+
           final satellites = <Satellite>[];
           for (final key in dataKeys) {
             final jsonStr = _cacheBox.get(key);
