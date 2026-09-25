@@ -95,8 +95,8 @@ class _RadarScreenState extends State<RadarScreen> {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final host = body['host'] as String;
       final radar = body['radar'] as Map<String, dynamic>;
-      final past = (radar['past'] as List<dynamic>? ?? [])
-          .cast<Map<String, dynamic>>();
+      final past =
+          (radar['past'] as List<dynamic>? ?? []).cast<Map<String, dynamic>>();
       final nowcast = (radar['nowcast'] as List<dynamic>? ?? [])
           .cast<Map<String, dynamic>>();
       if (past.isEmpty) throw Exception('No radar frames available');
@@ -264,27 +264,27 @@ class _RadarScreenState extends State<RadarScreen> {
                         overlayColor: AppTheme.accent.withValues(alpha: 0.2),
                       ),
                       child: Slider(
-   value: _frameIndex.toDouble(),
-   min: 0,
-   max: (_frames.length - 1).toDouble(),
-   divisions: _frames.length > 1 ? _frames.length - 1 : 1,
-   onChanged: (value) {
-     setState(() {
-       _frameIndex = value.round();
-       _animationTimer?.cancel();
-     });
-   },
- ),
+                        value: _frameIndex.toDouble(),
+                        min: 0,
+                        max: (_frames.length - 1).toDouble(),
+                        divisions: _frames.length > 1 ? _frames.length - 1 : 1,
+                        onChanged: (value) {
+                          setState(() {
+                            _frameIndex = value.round();
+                            _animationTimer?.cancel();
+                          });
+                        },
+                      ),
                     ),
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('PAST',
-                            style: TextStyle(
-                                color: Colors.white54, fontSize: 10)),
+                            style:
+                                TextStyle(color: Colors.white54, fontSize: 10)),
                         Text('FORECAST',
-                            style: TextStyle(
-                                color: Colors.white54, fontSize: 10)),
+                            style:
+                                TextStyle(color: Colors.white54, fontSize: 10)),
                       ],
                     ),
                     Padding(
@@ -298,15 +298,15 @@ class _RadarScreenState extends State<RadarScreen> {
                         onPressed: () async {
                           final lat = _center.latitude.toStringAsFixed(4);
                           final lon = _center.longitude.toStringAsFixed(4);
-                          final url = Uri.parse('https://www.windy.com/?$lat,$lon,7');
-                          if (await launchUrl(url, mode: LaunchMode.externalApplication)) {
-                            // success
-                          } else {
-                            if (!mounted) return;
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Could not open Windy.com')),
-                            );
-                          }
+                          final url =
+                              Uri.parse('https://www.windy.com/?$lat,$lon,7');
+                          final opened = await launchUrl(url,
+                              mode: LaunchMode.externalApplication);
+                          if (opened || !context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Could not open Windy.com')),
+                          );
                         },
                       ),
                     ),

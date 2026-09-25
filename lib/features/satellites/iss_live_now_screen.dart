@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -37,6 +38,8 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   bool _loading = true;
   List<LatLng> _trackPast = [];
   List<LatLng> _trackFuture = [];
+  bool _following = true;
+  bool _mapReady = false;
 
   @override
   void initState() {
@@ -89,6 +92,20 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
     final pos = OrbitUtils.getSatellitePosition(iss, now);
     setState(() => _issPosition = pos);
     _computeTrack(iss, now);
+
+    // Real ISS trackers keep the satellite centered as it moves - a map
+    // with only an `initialCenter` never re-centers on its own once built,
+    // so without this the marker would drift toward (and past) the edge of
+    // the viewport within a few minutes. Guarded by _mapReady: calling
+    // MapController.move()/.camera before FlutterMap has rendered at least
+    // once throws (this fires once immediately from _initialize(), before
+    // the map widget exists yet).
+    if (_following && _mapReady) {
+      _mapController.move(
+        LatLng(pos['lat']!, pos['lon']!),
+        _mapController.camera.zoom,
+      );
+    }
 
     final userLoc = _userLocation;
     if (userLoc != null) {
@@ -151,6 +168,18 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
     return segments;
   }
 
+  /// The ground-track radius (in meters) of the region from which the ISS
+  /// is above the horizon right now, from real satellite-footprint
+  /// geometry: for a satellite at altitude [altKm] above a sphere of mean
+  /// Earth radius R, the angular radius of the footprint is
+  /// acos(R / (R + altitude)), and the ground radius is R times that angle
+  /// (in radians).
+  static double _footprintRadiusMeters(double altKm) {
+    const earthRadiusKm = 6371.0;
+    final centralAngle = math.acos(earthRadiusKm / (earthRadiusKm + altKm));
+    return earthRadiusKm * centralAngle * 1000;
+  }
+
   String _formatNextPass() {
     final pass = _nextPass;
     if (pass == null)
@@ -205,6 +234,16 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                         initialZoom: 2.5,
                         minZoom: 1,
                         maxZoom: 8,
+                        onMapReady: () => setState(() => _mapReady = true),
+                        // A manual drag/pinch (hasGesture) means the person
+                        // wants to look somewhere else - stop auto-following
+                        // so the next 5s position update doesn't immediately
+                        // snap the view back to the ISS.
+                        onPositionChanged: (camera, hasGesture) {
+                          if (hasGesture && _following) {
+                            setState(() => _following = false);
+                          }
+                        },
                       ),
                       children: [
                         // Real satellite photography of the Earth instead
@@ -214,6 +253,26 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                           urlTemplate:
                               'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                           userAgentPackageName: 'com.rockets.app',
+                        ),
+                        // Visibility footprint: the ground region from which
+                        // the ISS is above the horizon right now - the
+                        // signature visual of every real ISS tracker, and
+                        // something this screen never had at all before.
+                        // Radius from real satellite-footprint geometry:
+                        // groundRadius = earthRadius * acos(earthRadius /
+                        // (earthRadius + altitude)).
+                        CircleLayer(
+                          circles: [
+                            CircleMarker(
+                              point: center,
+                              radius: _footprintRadiusMeters(pos['alt']!),
+                              useRadiusInMeter: true,
+                              color: Colors.redAccent.withValues(alpha: 0.08),
+                              borderColor:
+                                  Colors.redAccent.withValues(alpha: 0.4),
+                              borderStrokeWidth: 1.5,
+                            ),
+                          ],
                         ),
                         // One continuous track, past+future joined, solid
                         // and in a single style - the earlier dotted
@@ -273,8 +332,18 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                           const SizedBox(height: 6),
                           _MapToolButton(
                             icon: Icons.my_location,
+                            onPressed: () {
+                              setState(() => _following = true);
+                              _mapController.move(center, 2.5);
+                            },
+                          ),
+                          const SizedBox(height: 6),
+                          _MapToolButton(
+                            icon: _following
+                                ? Icons.gps_fixed
+                                : Icons.gps_not_fixed,
                             onPressed: () =>
-                                _mapController.move(center, 2.5),
+                                setState(() => _following = !_following),
                           ),
                         ],
                       ),
