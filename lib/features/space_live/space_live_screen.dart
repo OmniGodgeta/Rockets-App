@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/theme.dart';
+import '../../utils/robust_youtube_player.dart';
 
 /// Full-screen live Earth/ISS video feed.
 ///
@@ -11,12 +11,11 @@ import '../../app/theme.dart';
 /// Its official successor is NASA's own ongoing live HD stream from an
 /// external ISS camera, so that's what this screen shows.
 ///
-/// Rebuilt on youtube_player_iframe instead of a raw WebViewController
-/// pointed straight at a youtube-nocookie.com embed URL - that approach hit
-/// YouTube error 153 ("requested video cannot be played in an embedded
-/// player") because a bare loadRequest() never establishes a valid HTTP
-/// origin for YouTube's embed-origin check the way the IFrame Player API
-/// (which this package wraps correctly, including origin/enablejsapi) does.
+/// Uses RobustYoutubePlayer (lib/utils/robust_youtube_player.dart), which
+/// falls back to an "Open in YouTube" button on any playback failure - the
+/// operator hit a playback error on-device that didn't match any of the
+/// documented YouTube IFrame API error codes, which couldn't be reproduced
+/// or root-caused further without a physical device to test on.
 ///
 /// Note on ads: this is a real, official NASA-run YouTube stream (video id
 /// awQzjn72bI0, "Live High-Definition Views from the International Space
@@ -25,36 +24,10 @@ import '../../app/theme.dart';
 /// embed - unlike Weather Radar and ISS Live Now, this screen can't be made
 /// fully native without standing up our own video relay, so it isn't a
 /// "0 ads" guarantee the way those two are.
-class SpaceLiveScreen extends StatefulWidget {
+class SpaceLiveScreen extends StatelessWidget {
   const SpaceLiveScreen({super.key});
 
-  @override
-  State<SpaceLiveScreen> createState() => _SpaceLiveScreenState();
-}
-
-class _SpaceLiveScreenState extends State<SpaceLiveScreen> {
   static const _videoId = 'awQzjn72bI0';
-  late final YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: _videoId,
-      autoPlay: true,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-        playsInline: true,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.close();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,12 +38,14 @@ class _SpaceLiveScreenState extends State<SpaceLiveScreen> {
         backgroundColor: Colors.black,
         foregroundColor: AppTheme.textPrimary,
       ),
-      body: Column(
+      body: const Column(
         children: [
           Expanded(
-            child: YoutubePlayer(controller: _controller),
+            child: Center(
+              child: RobustYoutubePlayer(videoId: _videoId, autoPlay: true),
+            ),
           ),
-          const Padding(
+          Padding(
             padding: EdgeInsets.all(12),
             child: Text(
               'Official NASA live views from the International Space Station.',

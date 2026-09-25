@@ -1,42 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../app/theme.dart';
+import '../../utils/robust_youtube_player.dart';
 
 /// A brief history of rocketry: a short native write-up plus the operator's
-/// chosen reference video, embedded via youtube_player_iframe (same fix as
-/// Space Live) rather than a raw WebView pointed at a bare embed URL.
-class RocketHistoryScreen extends StatefulWidget {
+/// chosen reference video. Uses RobustYoutubePlayer (falls back to "Open in
+/// YouTube" on any playback failure - see space_live_screen.dart for why).
+class RocketHistoryScreen extends StatelessWidget {
   const RocketHistoryScreen({super.key});
 
-  @override
-  State<RocketHistoryScreen> createState() => _RocketHistoryScreenState();
-}
-
-class _RocketHistoryScreenState extends State<RocketHistoryScreen> {
   // "Escape Velocity - A Quick History of Space Exploration" (David Peterson)
   static const _videoId = 'PLcE3AI9wwE';
-  late final YoutubePlayerController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = YoutubePlayerController.fromVideoId(
-      videoId: _videoId,
-      autoPlay: false,
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-        playsInline: true,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.close();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +19,7 @@ class _RocketHistoryScreenState extends State<RocketHistoryScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: YoutubePlayer(controller: _controller),
-          ),
+          const RobustYoutubePlayer(videoId: _videoId),
           const SizedBox(height: 20),
           Text(
             'A BRIEF HISTORY OF ROCKETS',

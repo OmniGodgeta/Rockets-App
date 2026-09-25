@@ -196,56 +196,88 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
           child: pos == null
               ? const Center(
                   child: CircularProgressIndicator(color: AppTheme.accent))
-              : FlutterMap(
-                  mapController: _mapController,
-                  options: MapOptions(
-                    initialCenter: center,
-                    initialZoom: 2.5,
-                    minZoom: 1,
-                    maxZoom: 8,
-                  ),
+              : Stack(
                   children: [
-                    // Real satellite photography of the Earth instead of a
-                    // vector line-art map, per the operator's ask for a
-                    // "realistic" map here.
-                    TileLayer(
-                      urlTemplate:
-                          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                      userAgentPackageName: 'com.rockets.app',
-                    ),
-                    PolylineLayer(
-                      polylines: [
-                        for (final segment in _splitAtAntimeridian(_trackPast))
-                          Polyline(
-                            points: segment,
-                            color: Colors.redAccent.withValues(alpha: 0.45),
-                            strokeWidth: 2,
-                          ),
-                        for (final segment
-                            in _splitAtAntimeridian(_trackFuture))
-                          Polyline(
-                            points: segment,
-                            color: Colors.redAccent.withValues(alpha: 0.85),
-                            strokeWidth: 2,
-                            pattern: const StrokePattern.dotted(),
-                          ),
-                      ],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: center,
-                          width: 44,
-                          height: 44,
-                          child: const Icon(Icons.satellite_alt,
-                              color: Colors.redAccent, size: 36),
+                    FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(
+                        initialCenter: center,
+                        initialZoom: 2.5,
+                        minZoom: 1,
+                        maxZoom: 8,
+                      ),
+                      children: [
+                        // Real satellite photography of the Earth instead
+                        // of a vector line-art map, per the operator's ask
+                        // for a "realistic" map here.
+                        TileLayer(
+                          urlTemplate:
+                              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                          userAgentPackageName: 'com.rockets.app',
+                        ),
+                        // One continuous track, past+future joined, solid
+                        // and in a single style - the earlier dotted
+                        // pattern on the future half rendered as a lot of
+                        // short dash marks that, combined with the
+                        // antimeridian splitting, read as clutter rather
+                        // than a single clean orbit line.
+                        PolylineLayer(
+                          polylines: [
+                            for (final segment in _splitAtAntimeridian(
+                                [..._trackPast, ..._trackFuture]))
+                              Polyline(
+                                points: segment,
+                                color: Colors.redAccent.withValues(alpha: 0.7),
+                                strokeWidth: 2,
+                              ),
+                          ],
+                        ),
+                        MarkerLayer(
+                          markers: [
+                            Marker(
+                              point: center,
+                              width: 44,
+                              height: 44,
+                              child: const Icon(Icons.satellite_alt,
+                                  color: Colors.redAccent, size: 36),
+                            ),
+                          ],
+                        ),
+                        const RichAttributionWidget(
+                          attributions: [
+                            TextSourceAttribution('Esri World Imagery'),
+                          ],
                         ),
                       ],
                     ),
-                    const RichAttributionWidget(
-                      attributions: [
-                        TextSourceAttribution('OpenStreetMap contributors')
-                      ],
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Column(
+                        children: [
+                          _MapToolButton(
+                            icon: Icons.add,
+                            onPressed: () => _mapController.move(
+                              _mapController.camera.center,
+                              (_mapController.camera.zoom + 1).clamp(1, 8),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          _MapToolButton(
+                            icon: Icons.remove,
+                            onPressed: () => _mapController.move(
+                              _mapController.camera.center,
+                              (_mapController.camera.zoom - 1).clamp(1, 8),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          _MapToolButton(
+                            icon: Icons.my_location,
+                            onPressed: () =>
+                                _mapController.move(center, 2.5),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -379,6 +411,27 @@ class _ErrorState extends StatelessWidget {
           const SizedBox(height: 16),
           ElevatedButton(onPressed: onRetry, child: const Text('RETRY')),
         ],
+      ),
+    );
+  }
+}
+
+/// A small round zoom/recenter control overlaid on the map - the "tools"
+/// this screen was missing entirely.
+class _MapToolButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _MapToolButton({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.surface.withValues(alpha: 0.9),
+      shape: const CircleBorder(),
+      child: IconButton(
+        icon: Icon(icon, color: AppTheme.textPrimary, size: 20),
+        onPressed: onPressed,
       ),
     );
   }

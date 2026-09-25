@@ -121,8 +121,22 @@ class _RocketBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final drawHeight = rocket.heightMeters * scaleFactor;
-    final drawWidth = (rocket.diameterMeters * scaleFactor).clamp(18.0, 140.0);
+    // The rocket's real height maps exactly to this box's height, via the
+    // one shared scaleFactor every item in the row uses - this IS the fix
+    // for the original "human looks nearly as tall as Falcon 9" bug. Width
+    // is a fixed lane (not diameterMeters * scaleFactor): a real photo
+    // stretched to a true diameter-accurate sliver (a 70 m x 3.7 m box is
+    // ~19:1) would be squashed into an unrecognizable smear, which is worse
+    // than not being to scale on that axis. Every item sits in the same
+    // outer Column(mainAxisAlignment: end), so every box's BOTTOM edge - the
+    // "ground" - lines up across the whole row; only the top edge moves,
+    // which is what "aligned, standing on the same ground" actually means.
+    // Floored so the smallest item (a 1.7 m human next to a 150 m rocket)
+    // stays a visible sliver instead of a literal few-pixel line - still
+    // dramatically smaller than the rockets, just not to the point of
+    // disappearing.
+    final drawHeight = (rocket.heightMeters * scaleFactor).clamp(14.0, double.infinity);
+    const laneWidth = 96.0;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -130,21 +144,30 @@ class _RocketBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          WikipediaThumbnail(wikipediaTitle: rocket.wikipediaTitle),
-          const SizedBox(height: 6),
           SizedBox(
-            width: drawWidth,
+            width: laneWidth,
             height: drawHeight,
-            child: CustomPaint(
-              painter: _SilhouettePainter(
-                color: isSelected ? AppTheme.accent : AppTheme.textSecondary,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: isSelected ? AppTheme.accent : AppTheme.surfaceBorder,
+                  width: isSelected ? 2 : 1,
+                ),
               ),
-              size: Size(drawWidth, drawHeight),
+              // SizedBox -> DecoratedBox both pass tight WxH constraints
+              // straight through, so the image actually fills this
+              // height-accurate box (BoxFit.contain scales the bitmap
+              // within it) instead of rendering at its own natural size.
+              child: WikipediaThumbnail(
+                wikipediaTitle: rocket.wikipediaTitle,
+                circular: false,
+                fit: BoxFit.contain,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           SizedBox(
-            width: 100,
+            width: laneWidth + 20,
             child: Text(
               rocket.name,
               textAlign: TextAlign.center,
@@ -164,52 +187,5 @@ class _RocketBar extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-class _SilhouettePainter extends CustomPainter {
-  final Color color;
-
-  _SilhouettePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final double centerX = size.width / 2;
-    final double bottomY = size.height;
-    const double topY = 0;
-    final double halfWidth = size.width / 2;
-
-    const double noseConeRatio = 0.15;
-    final double noseHeight = size.height * noseConeRatio;
-    final double bodyHeight = size.height - noseHeight;
-
-    final Path path = Path();
-    path.moveTo(centerX - halfWidth, bottomY);
-    path.lineTo(centerX - halfWidth, bottomY - bodyHeight);
-    path.quadraticBezierTo(
-      centerX - (halfWidth * 0.3),
-      topY + (noseHeight * 0.5),
-      centerX,
-      topY,
-    );
-    path.quadraticBezierTo(
-      centerX + (halfWidth * 0.3),
-      topY + (noseHeight * 0.5),
-      centerX + halfWidth,
-      bottomY - bodyHeight,
-    );
-    path.lineTo(centerX + halfWidth, bottomY);
-    path.close();
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _SilhouettePainter oldDelegate) {
-    return oldDelegate.color != color;
   }
 }

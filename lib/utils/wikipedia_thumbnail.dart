@@ -13,10 +13,20 @@ class WikipediaThumbnail extends StatefulWidget {
   final String wikipediaTitle;
   final double size;
 
+  /// true (default): a small round badge at [size]x[size], used for the
+  /// Scale of the Universe items. false: fills whatever box the parent
+  /// gives it, undecorated - used by Rocket Scales, where the photo itself
+  /// needs to sit inside an accurately-scaled height/width box rather than
+  /// a fixed-size badge.
+  final bool circular;
+  final BoxFit fit;
+
   const WikipediaThumbnail({
     super.key,
     required this.wikipediaTitle,
     this.size = 44,
+    this.circular = true,
+    this.fit = BoxFit.cover,
   });
 
   @override
@@ -45,10 +55,16 @@ class _WikipediaThumbnailState extends State<WikipediaThumbnail> {
   }
 
   Future<void> _resolve() async {
-    if (_cache.containsKey(widget.wikipediaTitle)) {
-      if (mounted) {
+    // Captured so a slow, out-of-order response for a title we've since
+    // moved on from (e.g. the user dragged the slider past several items
+    // before this request returned) can't overwrite the current one - this
+    // was the actual cause of items showing another item's photo.
+    final requestedTitle = widget.wikipediaTitle;
+
+    if (_cache.containsKey(requestedTitle)) {
+      if (mounted && widget.wikipediaTitle == requestedTitle) {
         setState(() {
-          _imageUrl = _cache[widget.wikipediaTitle];
+          _imageUrl = _cache[requestedTitle];
           _loading = false;
         });
       }
@@ -57,25 +73,54 @@ class _WikipediaThumbnailState extends State<WikipediaThumbnail> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://en.wikipedia.org/api/rest_v1/page/summary/${Uri.encodeComponent(widget.wikipediaTitle)}'),
+            'https://en.wikipedia.org/api/rest_v1/page/summary/${Uri.encodeComponent(requestedTitle)}'),
         headers: {'User-Agent': 'RocketsApp/1.0'},
       );
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final thumbnail = body['thumbnail'] as Map<String, dynamic>?;
         final url = thumbnail?['source'] as String?;
-        _cache[widget.wikipediaTitle] = url;
-        if (mounted) setState(() => _imageUrl = url);
+        _cache[requestedTitle] = url;
+        if (mounted && widget.wikipediaTitle == requestedTitle) {
+          setState(() => _imageUrl = url);
+        }
       }
     } catch (_) {
       // No photo available - callers still render fine without one.
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && widget.wikipediaTitle == requestedTitle) {
+        setState(() => _loading = false);
+      }
     }
+  }
+
+  Widget _content(double iconSize) {
+    if (_loading) {
+      return Center(
+        child: SizedBox(
+          width: iconSize,
+          height: iconSize,
+          child: const CircularProgressIndicator(strokeWidth: 2),
+        ),
+      );
+    }
+    if (_imageUrl != null) {
+      return CachedNetworkImage(
+        imageUrl: _imageUrl!,
+        fit: widget.fit,
+        errorWidget: (context, url, error) =>
+            Icon(Icons.image_not_supported, size: iconSize),
+      );
+    }
+    return Icon(Icons.image_not_supported,
+        size: iconSize, color: AppTheme.textSecondary);
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.circular) {
+      return _content(widget.size * 0.45);
+    }
     return Container(
       width: widget.size,
       height: widget.size,
@@ -85,24 +130,7 @@ class _WikipediaThumbnailState extends State<WikipediaThumbnail> {
         color: AppTheme.surface,
       ),
       clipBehavior: Clip.antiAlias,
-      child: _loading
-          ? Center(
-              child: SizedBox(
-                width: widget.size * 0.35,
-                height: widget.size * 0.35,
-                child: const CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          : _imageUrl != null
-              ? CachedNetworkImage(
-                  imageUrl: _imageUrl!,
-                  fit: BoxFit.cover,
-                  errorWidget: (context, url, error) => Icon(
-                      Icons.image_not_supported,
-                      size: widget.size * 0.45),
-                )
-              : Icon(Icons.image_not_supported,
-                  size: widget.size * 0.45, color: AppTheme.textSecondary),
+      child: _content(widget.size * 0.35),
     );
   }
 }
