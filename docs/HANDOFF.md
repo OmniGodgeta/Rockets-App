@@ -2,6 +2,76 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.2.0 (2026-09-25) — scale accuracy, ISS trajectory + compass elevation, Space Live fixed, Gallery rebuild
+
+Second round of operator device feedback, fixed directly by the Claude Code
+supervisor (not delegated to a kanban worker, given this repo's history of
+fabricated/uncommitted "done" claims from local models - see the fabrication
+incident further down this file). Also fast-forwarded `main` up to the tip of
+`wt/rockets-agent-build` first (58 commits, a strict superset of every other
+`wt/rockets-agent-*` branch) - `main` had been stuck since 2026-09-24 11:08
+even though a real v1.1.0 release had already been cut from that branch
+directly, so `main` and the actual shipped app had drifted apart.
+
+- **Weather Radar**: added a drag-to-scrub time bar across RainViewer's
+  past/forecast frames (was locked to the single latest frame), and a real
+  satellite-imagery basemap (Esri World Imagery) instead of OSM vector tiles.
+- **Rocket Scales**: fixed a real bug in `_SilhouettePainter` - every rocket
+  was scaled to fill its own independent box, so a 1.7 m human rendered at
+  nearly the same on-screen height as a 70 m Falcon 9. Now every item shares
+  one scale factor computed from the tallest currently-revealed rocket. Data
+  now sorted ascending human-to-Starship-V3, with a bottom slider (reveals
+  progressively more rockets as you drag) and a real reference photo per
+  rocket fetched live via Wikipedia's summary API (`wikipediaTitle` field,
+  see `lib/utils/wikipedia_thumbnail.dart` - shared with Scale of the
+  Universe, not hardcoded image URLs).
+- **Scale of the Universe**: added asteroids, planet diameters, a white
+  dwarf, a stellar black hole, the largest known stars, two supermassive
+  black holes, and a dwarf galaxy (previously jumped straight from ISS
+  orbit/Earth/Moon to galaxy-scale with nothing in between). Every entry now
+  has a real photo. New "COMPARE" mode (top-right button) lets you pick up
+  to 6 objects and see them side by side as circles scaled *linearly* to
+  size (not by area - an easy way to accidentally understate size
+  differences).
+- **ISS Live Now**: added a real ground-track trajectory (past 45 min +
+  future 45 min, split at the antimeridian so it doesn't draw a bogus line
+  across the whole map), and the same realistic basemap swap as Radar.
+- **Compass ("Track with Compass")**: added the missing vertical/elevation
+  axis - it only ever showed horizontal heading. `OrbitUtils.getLookAngle()`
+  wraps the sgp4_sdp4 package's existing `Site.getLookAngle()` (already used
+  by `calculateNextPass`) to get a real elevation angle; device pitch comes
+  from `sensors_plus`'s accelerometer stream with light exponential
+  smoothing. **The accelerometer sign convention
+  (`atan2(-event.y, event.z)`) has NOT been verified on a physical device** -
+  no Android device was available in this environment; if the vertical gauge
+  reads backwards on a real phone, flip the sign there.
+- **Space Live**: fixed YouTube error 153 ("embedded playback not allowed").
+  Root cause: a bare `WebViewController.loadRequest()` pointed straight at a
+  youtube-nocookie embed URL never establishes a valid HTTP origin for
+  YouTube's embed-origin check. Switched to the `youtube_player_iframe`
+  package, which handles this correctly. Same fix applied to the new Rocket
+  History screen's embedded video.
+- **Gallery** (renamed from "Astronomy Picture of the Day", which was a
+  WebView loading NASA's own bare white HTML page - one image, no theme, no
+  history): now a native, dark-themed, infinite-scroll, newest-first feed
+  combining NASA APOD (`start_date`/`end_date` range, DEMO_KEY - request a
+  real key at api.nasa.gov if the 30/hr rate limit becomes a problem) and
+  the NASA Image and Video Library (`images-api.nasa.gov`, no key needed).
+  See `lib/data/gallery_repository.dart`.
+- **Hamburger menu**: the `DrawerHeader` widget's built-in min-height/margin
+  made the header box much taller than the single-line "Rockets" title
+  needed, pushing the first menu item down - replaced with a plain fixed
+  88px `Container`.
+- Added **Rocket History**: a short native written history of rocketry plus
+  a reference video, same drawer pattern as everything else.
+
+Not yet verified on a physical device (none available in this environment):
+the compass elevation sign convention above, and general on-device feel of
+the new sliders/gauges. Verified for real: `flutter analyze --fatal-infos`
+(0 new issues, 4 pre-existing info-level lints untouched), `flutter test`
+(1/1 passing), and a real `flutter build apk --release` (not a stale-file
+check) before tagging/releasing v1.2.0.
+
 ## v1.1.0 (2026-09-24) — adaptive layout, ad-free ISS/radar/universe, in-app livestreams, notification settings, missing location permission fixed
 
 A large round of fixes and features from real device feedback, done directly
