@@ -36,7 +36,6 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   DateTime? _nextPass;
   String? _error;
   bool _loading = true;
-  List<LatLng> _trackPast = [];
   List<LatLng> _trackFuture = [];
   bool _following = true;
   bool _mapReady = false;
@@ -119,33 +118,26 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
     }
   }
 
-  /// Ground track: the ISS's own past/future path, sampled every 30s across
-  /// a 45-minute window each way (a full ISS orbit is ~92 min). Longitude
-  /// wraps at +/-180deg, so a single Polyline would draw a bogus line clear
-  /// across the map at each wrap - split into segments there instead.
+  /// Ground track: current position forward through one full orbit only
+  /// (~93 min for the ISS at its current altitude - no past trace). Showing
+  /// both a 45-min past AND 45-min future trace (as this screen used to)
+  /// covers nearly two full orbits combined once Earth's rotation between
+  /// them is accounted for, which is a lot more line than "where is it
+  /// headed" needs and reads as clutter. Longitude wraps at +/-180deg, so a
+  /// single Polyline would draw a bogus line clear across the map at each
+  /// wrap - split into segments there instead (see _splitAtAntimeridian).
   void _computeTrack(Satellite iss, DateTime now) {
     const sampleEvery = Duration(seconds: 30);
-    const window = Duration(minutes: 45);
+    const orbitalPeriod = Duration(minutes: 93);
 
-    List<LatLng> sample(bool forward) {
-      final points = <LatLng>[];
-      var steps = window.inSeconds ~/ sampleEvery.inSeconds;
-      for (var i = 0; i <= steps; i++) {
-        final t = forward
-            ? now.add(sampleEvery * i)
-            : now.subtract(sampleEvery * i);
-        final p = OrbitUtils.getSatellitePosition(iss, t);
-        points.add(LatLng(p['lat']!, p['lon']!));
-      }
-      return forward ? points : points.reversed.toList();
+    final points = <LatLng>[];
+    final steps = orbitalPeriod.inSeconds ~/ sampleEvery.inSeconds;
+    for (var i = 0; i <= steps; i++) {
+      final p = OrbitUtils.getSatellitePosition(iss, now.add(sampleEvery * i));
+      points.add(LatLng(p['lat']!, p['lon']!));
     }
 
-    if (mounted) {
-      setState(() {
-        _trackPast = sample(false);
-        _trackFuture = sample(true);
-      });
-    }
+    if (mounted) setState(() => _trackFuture = points);
   }
 
   /// Splits a track into segments wherever consecutive points cross the
@@ -274,16 +266,12 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                             ),
                           ],
                         ),
-                        // One continuous track, past+future joined, solid
-                        // and in a single style - the earlier dotted
-                        // pattern on the future half rendered as a lot of
-                        // short dash marks that, combined with the
-                        // antimeridian splitting, read as clutter rather
-                        // than a single clean orbit line.
+                        // Current position onward through one orbit only -
+                        // no past trace. One solid style throughout.
                         PolylineLayer(
                           polylines: [
-                            for (final segment in _splitAtAntimeridian(
-                                [..._trackPast, ..._trackFuture]))
+                            for (final segment
+                                in _splitAtAntimeridian(_trackFuture))
                               Polyline(
                                 points: segment,
                                 color: Colors.redAccent.withValues(alpha: 0.7),

@@ -39,10 +39,24 @@ class OrbitUtils {
       // Step 6: Convert ECI to Geodetic coordinates (Lat/Lon/Alt)
       final coordGeo = eciPos.toGeo();
 
-      // Converting radians to degrees for user convenience in the UI.
+      // sgp4_sdp4's toGeo() documents its own lon as "radians" but wraps it
+      // into [0, 2*pi) (see its source: "if (lon < 0.0) lon += TWOPI"), i.e.
+      // [0deg, 360deg) once converted - NOT the [-180deg, 180deg] convention
+      // every consumer here actually needs (flutter_map/LatLng's Mercator
+      // math, and this file's own antimeridian-split logic below, both
+      // assume standard signed longitude). Left unconverted, this was a
+      // real bug: for the entire western hemisphere the raw value comes
+      // back as 180-360 instead of -180-0, which flutter_map renders as a
+      // wildly wrong map position - the exact "ISS teleporting" and
+      // "trajectory drawn as a mess of lines" the operator reported. Half
+      // of every single orbit crosses through this range, so it wasn't an
+      // edge case - it was wrong twice per orbit, every orbit.
+      double lonDeg = coordGeo.lon * (180.0 / pi);
+      if (lonDeg > 180) lonDeg -= 360;
+
       return {
         'lat': coordGeo.lat * (180.0 / pi),
-        'lon': coordGeo.lon * (180.0 / pi),
+        'lon': lonDeg,
         'alt': coordGeo.alt,
       };
     } catch (e) {

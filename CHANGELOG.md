@@ -1,5 +1,20 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.2] - 2026-09-26
+
+### Fixed
+
+- **ISS Live Now: the real bug behind "the ISS keeps teleporting" and "too
+  many lines."** The orbital-math library returns longitude wrapped into
+  0-360 degrees, not the standard -180 to 180 that the map and this app's
+  own trajectory code both assume - for half of every orbit (the whole
+  western hemisphere), the position was being fed to the map completely
+  wrong. Fixed at the source (`OrbitUtils.getSatellitePosition`), so it's
+  correct everywhere that function is used, not just this screen.
+- ISS Live Now: simplified the trajectory to current position onward
+  through one orbit only (no past trace), per feedback that the combined
+  past+future view was more line than needed.
+
 ## [v1.2.1] - 2026-09-25
 
 Second round of fixes on top of v1.2.0, from real follow-up feedback.

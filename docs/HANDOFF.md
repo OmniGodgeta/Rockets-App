@@ -2,6 +2,69 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.2.2 (2026-09-26) — the real ISS tracking bug: a longitude-range bug, not a rendering bug
+
+After v1.2.1 shipped a round of ISS Live Now polish (footprint circle, map
+follow, zoom controls, one merged trajectory line instead of two styles),
+the operator reported that real device screenshots still showed "many
+lines everywhere" and the ISS marker itself "kept teleporting" between
+screenshots. That ruled out the v1.2.1 theory (that it was purely a
+rendering/styling problem - dotted pattern, too many antimeridian splits) -
+a marker that teleports between polling intervals means the underlying
+*position calculation* is wrong, not just how it's drawn.
+
+**Root cause, found by reading `sgp4_sdp4`'s own source
+(`~/.pub-cache/hosted/pub.dev/sgp4_sdp4-0.1.0/lib/src/eci.dart`,
+`Eci.toGeo()`):** the library's geodetic longitude is documented as
+"radians" but is wrapped into **[0, 2·pi) i.e. [0deg, 360deg)** - see its own
+line `if (lon < 0.0) lon += TWOPI;`. `OrbitUtils.getSatellitePosition()` in
+`lib/utils/orbit_utils.dart` took that value, multiplied straight by
+`180/pi`, and returned it as-is - **never normalized to the standard
+[-180deg, 180deg] signed-longitude convention** that `flutter_map`/`LatLng`
+(Web Mercator projection math: `x = (lon + 180) / 360`) and this app's own
+antimeridian-split logic both assume. For any moment the ISS's true
+longitude is anywhere in the **western hemisphere** - which is very
+literally half of every single orbit - the raw library value comes back as
+180-360 instead of -180-0. Fed into flutter_map, that produces a
+wildly-wrong screen position (the "teleport"), and fed into the
+trajectory's own point-to-point antimeridian-crossing check, it produces
+spurious/missing wraps (the "many lines"). This was wrong on every
+consumer of `OrbitUtils.getSatellitePosition()`
+(`iss_live_now_screen.dart`, `satellites_screen.dart`,
+`satellite_detail_sheet.dart`) for the entire time this screen has existed
+- v1.2.1's polish pass could not have fixed it because the bug wasn't in
+any of the code that pass touched.
+
+**Fix** (`lib/utils/orbit_utils.dart`): after converting radians to
+degrees, `if (lonDeg > 180) lonDeg -= 360;`. One line, applies to every
+consumer at once since they all go through this one shared function.
+Verified against the library's own source (quoted above) rather than
+assumed - a from-scratch standalone numerical script to double-check at
+runtime hit an unrelated bug in *the script itself* (SGP4 propagation
+errors a few minutes past epoch for reasons not chased down further, since
+it's throwaway test code, not shipped code) and was abandoned in favor of
+the source-level proof, which is unambiguous on its own.
+
+**Scope simplified per the operator's explicit ask**: "at best there
+should be the current trajectory and tracking only 1 orbit later." Dropped
+the past-45-minutes trace entirely; `_computeTrack` in
+`iss_live_now_screen.dart` now samples forward only, for one full orbital
+period (~93 min for the ISS at its current altitude), not a 45-min-each-way
+window. `_trackPast` field removed.
+
+**Not verified on a physical device** (none available in this
+environment) - same limitation as everything else on this screen. The fix
+itself is proven at the source-code level (the library's own documented
+wrap-around, quoted above), which is a stronger form of verification than
+a device screenshot would have been anyway, but the actual on-screen
+result - smooth marker motion, one clean forward arc - has not been seen
+by a human yet. If it's still wrong after this, the *next* thing to check
+is whether `_mapController.move()`'s follow logic and the polyline
+rendering handle a track that itself crosses the antimeridian mid-arc
+cleanly (the `_splitAtAntimeridian` logic should now finally get correctly-
+signed input to work with, but hasn't been re-verified against a real
+crossing since the fix).
+
 ## v1.2.0 (2026-09-25) — scale accuracy, ISS trajectory + compass elevation, Space Live fixed, Gallery rebuild
 
 Second round of operator device feedback, fixed directly by the Claude Code
