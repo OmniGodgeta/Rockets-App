@@ -19,7 +19,7 @@ class RocketHistoryScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const RobustYoutubePlayer(videoId: _videoId),
+          const RobustYoutubePlayer(videoId: _videoId, startSeconds: 4),
           const SizedBox(height: 20),
           Text(
             'A BRIEF HISTORY OF ROCKETS',

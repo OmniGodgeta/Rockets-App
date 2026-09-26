@@ -7,27 +7,33 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../app/theme.dart';
 
 /// A YouTube embed that never gets stuck on a dead/broken player. Wraps
-/// youtube_player_iframe (the fix for the old raw-WebView error-153 issue),
-/// but adds real failure handling: both the IFrame API's own numbered
-/// errors (`controller.listen`, `value.error`) and raw WebView-level
-/// failures (`onWebResourceError`, which the `.fromVideoId` factory this
-/// screen used before does NOT expose) are watched. Either one swaps the
-/// player out for a plain "Open in YouTube" button instead of leaving a
-/// frozen or errored embed on screen - the operator hit a playback failure
-/// that didn't match any of the IFrame API's documented codes (2, 5, 100,
-/// 101, 105, 150), which could not be reproduced or diagnosed further
-/// without a physical device, so this is a defensive fallback rather than a
-/// confirmed root-cause fix.
+/// youtube_player_iframe, falling back to a plain "Open in YouTube" button
+/// only on the IFrame API's own numbered errors (`controller.listen`,
+/// `value.error` - the real, video-specific failure signal: 2, 5, 100, 101,
+/// 105, 150).
+///
+/// An earlier version of this widget ALSO treated any raw
+/// `onWebResourceError` as fatal. That was itself the bug the operator hit
+/// ("both sections only show Open in YouTube, can't play here") - a
+/// WebView loading YouTube's embed page routinely hits benign sub-resource
+/// errors (blocked ad/analytics requests, a missing favicon, etc.)
+/// completely unrelated to whether the video itself plays, and treating
+/// every one of those as fatal meant the fallback fired almost
+/// immediately, every time, regardless of whether the video ever actually
+/// had a chance to play. Removed - only `value.error` triggers the
+/// fallback now.
 class RobustYoutubePlayer extends StatefulWidget {
   final String videoId;
   final bool autoPlay;
   final double aspectRatio;
+  final double startSeconds;
 
   const RobustYoutubePlayer({
     super.key,
     required this.videoId,
     this.autoPlay = false,
     this.aspectRatio = 16 / 9,
+    this.startSeconds = 0,
   });
 
   @override
@@ -43,9 +49,6 @@ class _RobustYoutubePlayerState extends State<RobustYoutubePlayer> {
   void initState() {
     super.initState();
     _controller = YoutubePlayerController(
-      onWebResourceError: (_) {
-        if (mounted) setState(() => _failed = true);
-      },
       params: const YoutubePlayerParams(
         showControls: true,
         showFullscreenButton: true,
@@ -58,9 +61,11 @@ class _RobustYoutubePlayerState extends State<RobustYoutubePlayer> {
       }
     });
     if (widget.autoPlay) {
-      _controller.loadVideoById(videoId: widget.videoId);
+      _controller.loadVideoById(
+          videoId: widget.videoId, startSeconds: widget.startSeconds);
     } else {
-      _controller.cueVideoById(videoId: widget.videoId);
+      _controller.cueVideoById(
+          videoId: widget.videoId, startSeconds: widget.startSeconds);
     }
   }
 
