@@ -174,10 +174,11 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
 
   String _formatNextPass() {
     final pass = _nextPass;
-    if (pass == null)
+    if (pass == null) {
       return _userLocation == null
           ? 'Enable location to see'
           : 'No pass in next 24h';
+    }
     final diff = pass.difference(DateTime.now().toUtc());
     if (diff.inMinutes <= 0) return 'Overhead now!';
     if (diff.inHours > 0) return 'In ${diff.inHours}h ${diff.inMinutes % 60}m';
@@ -418,26 +419,28 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppTheme.surfaceBorder),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5)),
+          Text(
+            label,
+            style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5)),
           const SizedBox(height: 4),
           Text(value,
               style: const TextStyle(
                   color: AppTheme.textPrimary,
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.w700)),
         ],
       ),
