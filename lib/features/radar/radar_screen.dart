@@ -177,6 +177,7 @@ class _RadarScreenState extends State<RadarScreen> {
               ),
               if (_radarTileUrlTemplate != null)
                 TileLayer(
+                  key: ValueKey(_radarTileUrlTemplate),
                   urlTemplate: _radarTileUrlTemplate,
                   userAgentPackageName: 'com.rockets.app',
                 ),
