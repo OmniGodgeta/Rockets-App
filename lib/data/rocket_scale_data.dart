@@ -14,11 +14,18 @@ class RocketScale {
   final double diameterMeters;
   final String wikipediaTitle;
 
+  /// A bundled side-view diagram with a transparent background
+  /// (`assets/rockets/`, sources and licences in its CREDITS.md). It fills the
+  /// height-accurate box top to bottom, unlike a rectangular photo. Null means
+  /// no verified transparent diagram was found, so the Wikipedia photo is used.
+  final String? assetImage;
+
   const RocketScale({
     required this.name,
     required this.heightMeters,
     required this.diameterMeters,
     required this.wikipediaTitle,
+    this.assetImage,
   });
 }
 
@@ -34,30 +41,35 @@ const List<RocketScale> rocketScaleData = [
     heightMeters: averageHumanHeight,
     diameterMeters: 0.5,
     wikipediaTitle: 'Human_height',
+    assetImage: 'assets/rockets/human.png',
   ),
   RocketScale(
     name: 'Electron',
     heightMeters: 18.0,
     diameterMeters: 1.2,
     wikipediaTitle: 'Electron_(rocket)',
+    assetImage: 'assets/rockets/electron.png',
   ),
   RocketScale(
     name: 'Soyuz-2 (core stack)',
     heightMeters: 46.0,
     diameterMeters: 2.95,
     wikipediaTitle: 'Soyuz-2',
+    assetImage: 'assets/rockets/soyuz2.png',
   ),
   RocketScale(
     name: 'Ariane 5',
     heightMeters: 52.0,
     diameterMeters: 5.4,
     wikipediaTitle: 'Ariane_5',
+    assetImage: 'assets/rockets/ariane5.png',
   ),
   RocketScale(
     name: 'Space Shuttle (stack)',
     heightMeters: 56.0,
     diameterMeters: 8.7,
     wikipediaTitle: 'Space_Shuttle',
+    assetImage: 'assets/rockets/space_shuttle.png',
   ),
   RocketScale(
     name: 'Long March 5',
@@ -76,6 +88,7 @@ const List<RocketScale> rocketScaleData = [
     heightMeters: 63.0,
     diameterMeters: 5.4,
     wikipediaTitle: 'Ariane_6',
+    assetImage: 'assets/rockets/ariane6.png',
   ),
   RocketScale(
     name: 'H3',
@@ -88,12 +101,14 @@ const List<RocketScale> rocketScaleData = [
     heightMeters: 70.0,
     diameterMeters: 3.7,
     wikipediaTitle: 'Falcon_9',
+    assetImage: 'assets/rockets/falcon9.png',
   ),
   RocketScale(
     name: 'Falcon Heavy',
     heightMeters: 70.0,
     diameterMeters: 3.7,
     wikipediaTitle: 'Falcon_Heavy',
+    assetImage: 'assets/rockets/falcon_heavy.png',
   ),
   RocketScale(
     name: 'Delta IV Heavy',
@@ -106,31 +121,38 @@ const List<RocketScale> rocketScaleData = [
     heightMeters: 98.0,
     diameterMeters: 8.4,
     wikipediaTitle: 'Space_Launch_System',
+    assetImage: 'assets/rockets/sls.png',
   ),
   RocketScale(
     name: 'New Glenn',
     heightMeters: 98.0,
     diameterMeters: 7.0,
     wikipediaTitle: 'New_Glenn',
+    assetImage: 'assets/rockets/new_glenn.png',
   ),
   RocketScale(
     name: 'Saturn V',
     heightMeters: 111.0,
     diameterMeters: 10.0,
     wikipediaTitle: 'Saturn_V',
+    assetImage: 'assets/rockets/saturn_v.png',
   ),
   RocketScale(
     name: 'Starship + Super Heavy (V2)',
-    heightMeters: 124.0,
+    // Block 2: 71 m booster + 52.1 m ship (Wikipedia, checked 2026-10-02).
+    heightMeters: 123.1,
     diameterMeters: 9.0,
     wikipediaTitle: 'SpaceX_Starship',
   ),
-  // Starship V3 (Block 3): SpaceX's current-generation stack, taller booster
-  // and ship than V2. ~150 m total stack height, same 9 m diameter.
+  // Starship V3 (Block 3): SpaceX's current-generation stack. Booster is
+  // 72.3 m (Wikipedia, checked 2026-10-02) plus a ~52 m ship = ~124.4 m.
+  // This used to say ~150 m, which is no Starship version that has flown and
+  // made it look ~35% taller than it is next to Saturn V.
   RocketScale(
     name: 'Starship V3',
-    heightMeters: 150.0,
+    heightMeters: 124.4,
     diameterMeters: 9.0,
     wikipediaTitle: 'SpaceX_Starship',
+    assetImage: 'assets/rockets/starship_v3.png',
   ),
 ];

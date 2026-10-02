@@ -11,7 +11,8 @@ import '../../utils/wikipedia_thumbnail.dart';
 /// scrubs from the smallest (human) to the largest (Starship V3), revealing
 /// everything up to that point side by side, matching the reference video's
 /// "rocket size comparison" style: everything visible together, ordered
-/// smallest to largest, with a real reference photo per rocket.
+/// smallest to largest, with a transparent diagram (or a reference photo where
+/// none was found) per rocket.
 class RocketScaleScreen extends StatefulWidget {
   const RocketScaleScreen({super.key});
 
@@ -38,13 +39,26 @@ class _RocketScaleScreenState extends State<RocketScaleScreen> {
     final tallest = visible.last.heightMeters;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ROCKET SIZE COMPARISON')),
+      appBar: AppBar(
+        title: const Text('ROCKET SIZE COMPARISON'),
+        actions: [
+          IconButton(
+            tooltip: 'Image credits',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => _showCredits(context),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final drawHeight = constraints.maxHeight - 80;
+                // Room under the bars: the list's 32 px vertical padding,
+                // 8 px gap, a name of up to two lines and the height line.
+                // 80 overflowed by up to 10 px on the two-line names
+                // ("Starship + Super Heavy (V2)") at the tall end.
+                final drawHeight = constraints.maxHeight - 104;
                 final scaleFactor = drawHeight / tallest;
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -108,6 +122,54 @@ class _RocketScaleScreenState extends State<RocketScaleScreen> {
   }
 }
 
+/// The bundled diagrams are Wikimedia Commons files, several CC BY-SA, which
+/// requires visible attribution. Mirrors assets/rockets/CREDITS.md.
+const _credits = [
+  ('Human', 'Sebastian Wallroth', 'CC0'),
+  ('Electron', 'UnknownM1', 'CC BY-SA 4.0, outline added'),
+  ('Soyuz-2', 'David S. F. Portree / NASA', 'Public domain, recoloured'),
+  ('Ariane 5', 'Sylvain Comte', 'CC BY-SA 3.0'),
+  ('Space Shuttle', 'NASA', 'Public domain, cropped'),
+  ('Ariane 6', 'ChiZeroOne', 'CC BY-SA 4.0, cropped'),
+  ('Falcon 9 / Falcon Heavy', 'WDGraham', 'Attribution, cropped'),
+  ('SLS', 'NASA/cbush', 'Public domain'),
+  ('New Glenn', 'XYZtSpace', 'CC0'),
+  ('Saturn V', 'charner1963', 'CC0'),
+  ('Starship V3', 'FAA', 'Public domain'),
+];
+
+void _showCredits(BuildContext context) {
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: AppTheme.surface,
+    builder: (context) => SafeArea(
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        children: [
+          const Text('DIAGRAMS FROM WIKIMEDIA COMMONS',
+              style: TextStyle(
+                  color: AppTheme.accent,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 4),
+          const Text(
+              'Rockets without a diagram use their Wikipedia photo.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+          const SizedBox(height: 12),
+          for (final (what, who, licence) in _credits)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Text('$what: $who ($licence)',
+                  style: const TextStyle(
+                      color: AppTheme.textPrimary, fontSize: 13)),
+            ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _RocketBar extends StatelessWidget {
   final RocketScale rocket;
   final double scaleFactor;
@@ -158,11 +220,22 @@ class _RocketBar extends StatelessWidget {
               // straight through, so the image actually fills this
               // height-accurate box (BoxFit.contain scales the bitmap
               // within it) instead of rendering at its own natural size.
-              child: WikipediaThumbnail(
-                wikipediaTitle: rocket.wikipediaTitle,
-                circular: false,
-                fit: BoxFit.contain,
-              ),
+              child: rocket.assetImage != null
+                  // Transparent side-view diagram: drawn top to bottom, so
+                  // BoxFit.contain makes it fill the box's full height.
+                  ? Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Image.asset(
+                        rocket.assetImage!,
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.medium,
+                      ),
+                    )
+                  : WikipediaThumbnail(
+                      wikipediaTitle: rocket.wikipediaTitle,
+                      circular: false,
+                      fit: BoxFit.contain,
+                    ),
             ),
           ),
           const SizedBox(height: 8),
