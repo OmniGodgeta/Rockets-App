@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'theme.dart';
 import '../../features/radar/radar_screen.dart';
 import '../../features/about/about_screen.dart';
+import '../../features/changelog/changelog_screen.dart';
 import '../../features/aurora/aurora_screen.dart';
 import '../../features/rockets/rockets_screen.dart';
 import '../../features/satellites/satellites_screen.dart';
@@ -11,7 +11,6 @@ import '../../features/solar_system/solar_system_screen.dart';
 import '../../features/galaxy/galaxy_screen.dart';
 import '../../features/universe/universe_screen.dart';
 import '../../features/news/news_screen.dart';
-import '../../features/apod/apod_screen.dart';
 
 class AppMenuDrawer extends StatelessWidget {
   const AppMenuDrawer({super.key});
@@ -164,16 +163,16 @@ class AppMenuDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.image_outlined, color: AppTheme.textPrimary),
+              leading: const Icon(Icons.history, color: AppTheme.textPrimary),
               title: const Text(
-                'Picture of the Day',
+                'What\'s New',
                 style: TextStyle(color: AppTheme.textPrimary),
               ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ApodScreen()),
+                  MaterialPageRoute(builder: (context) => const ChangelogScreen()),
                 );
               },
             ),
