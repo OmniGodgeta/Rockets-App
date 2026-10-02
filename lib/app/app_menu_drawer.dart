@@ -11,6 +11,7 @@ import '../../features/apod/apod_screen.dart';
 import '../../features/history/rocket_history_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/space_live/space_live_screen.dart';
+import '../../features/stellarium/stellarium_screen.dart';
 import '../../data/settings_repository.dart';
 
 /// The hamburger drawer only holds things that aren't already one of the six
@@ -122,6 +123,19 @@ class AppMenuDrawer extends StatelessWidget {
                   context,
                   MaterialPageRoute(builder: (context) => const ScaleScreen()),
                 );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome,
+                  color: AppTheme.textPrimary),
+              title: const Text(
+                'Star Map (Stellarium)',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                final navigator = Navigator.of(context);
+                navigator.pop();
+                StellariumScreen.open(navigator);
               },
             ),
             ListTile(

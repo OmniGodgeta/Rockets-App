@@ -41,7 +41,11 @@ class LaunchRepository {
         if (jsonStr != null) {
           final map = jsonDecode(jsonStr) as Map<String, dynamic>;
           // Defensive validation during read: ensure top-level structural keys exist
-          if (map['rocket'] != null && map['pad'] != null && map['mission'] != null) {
+          // No 'mission' check: plenty of real launches (test flights,
+          // rideshares) have mission: null, Launch.fromJson handles it, and
+          // requiring it silently dropped them whenever the list came from
+          // cache (seen 2026-10-02: 4 launches skipped every time).
+          if (map['rocket'] != null && map['pad'] != null) {
             launches.add(Launch.fromJson(map));
           } else {
             debugPrint('Skipping corrupted launch record in cache: $key');

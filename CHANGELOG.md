@@ -1,5 +1,26 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.4] - 2026-10-02
+
+### Added
+
+- **Update notice.** On start the app checks GitHub for a newer release and
+  offers to download it. Releases are sideloaded, so v1.2.3 never reached the
+  phone on its own.
+- **Star Map (Stellarium)** in the menu. Opens the Stellarium Mobile app if
+  it's installed, otherwise Stellarium Web inside the app.
+- **ISS Live Now: open-in-app button** (top right). Opens the "ISS Live Now"
+  app if installed, otherwise its Play Store page.
+
+### Fixed
+
+- ISS map starts zoomed out to the whole world, so the path shows as the
+  orbit's real S-shaped wave. Zoomed in, a ground track is locally almost
+  straight and read as "straight red lines". The globe button returns to
+  this view, and the locate button zooms in and follows the ISS.
+- Launches with no mission listed (test flights, rideshares) no longer
+  vanish when the list is shown from cache.
+
 ## [v1.2.3] - 2026-10-02
 
 ### Fixed

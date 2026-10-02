@@ -50,6 +50,11 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
+        <!-- Apps we can hand off to (lib/utils/external_apps.dart). -->
+        <package android:name="com.nicedayapps.iss"/>
+        <package android:name="com.nicedayapps.iss_free"/>
+        <package android:name="com.noctuasoftware.stellarium_free"/>
+        <package android:name="com.noctuasoftware.stellarium"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

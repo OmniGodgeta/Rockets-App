@@ -11,6 +11,7 @@ import '../../data/iss_notification_service.dart';
 import '../../data/satellite_repository.dart';
 import '../../data/settings_repository.dart';
 import '../../models/satellite_model.dart';
+import '../../utils/external_apps.dart';
 import '../../utils/orbit_utils.dart';
 import '../../utils/wikipedia_thumbnail.dart';
 import 'compass_screen.dart';
@@ -29,6 +30,11 @@ class IssLiveNowScreen extends StatefulWidget {
 }
 
 class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
+  // The ISS never goes past ~52 deg N/S, so this frames every orbit fully.
+  static final _worldFit = CameraFit.bounds(
+    bounds: LatLngBounds(const LatLng(-62, -180), const LatLng(68, 180)),
+  );
+
   final _repository = SatelliteRepository();
   final MapController _mapController = MapController();
   Timer? _refreshTimer;
@@ -46,7 +52,10 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   String? _error;
   bool _loading = true;
   List<LatLng> _trackFuture = [];
-  bool _following = true;
+  // Off by default: the default view is the whole world (below), where
+  // following would just slide the map sideways. The locate button turns
+  // it on and zooms in.
+  bool _following = false;
   bool _mapReady = false;
 
   @override
@@ -273,7 +282,22 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('ISS LIVE NOW')),
+      appBar: AppBar(
+        title: const Text('ISS LIVE NOW'),
+        actions: [
+          // Hands off to the dedicated "ISS Live Now" app (live HD Earth
+          // feed, 3D tracker) when installed, else its Play Store page.
+          IconButton(
+            tooltip: 'Open the ISS Live Now app',
+            icon: const Icon(Icons.open_in_new),
+            onPressed: () async {
+              if (!await ExternalApps.open(ExternalApps.issLiveNow)) {
+                await ExternalApps.openStore(ExternalApps.issLiveNow.last);
+              }
+            },
+          ),
+        ],
+      ),
       body: _loading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.accent))
@@ -308,9 +332,15 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                     FlutterMap(
                       mapController: _mapController,
                       options: MapOptions(
-                        initialCenter: center,
-                        initialZoom: 2.5,
-                        minZoom: 1,
+                        // Whole world by default. Zoomed in, a ground track
+                        // is locally almost straight, so it read as "straight
+                        // red lines, not an orbit". Only the full-world view
+                        // shows the orbit's real S-shaped wave.
+                        initialCameraFit: _worldFit,
+                        // The world view is wider than tall, so the map shows
+                        // past the poles; keep that dark, not default grey.
+                        backgroundColor: AppTheme.background,
+                        minZoom: 0,
                         maxZoom: 8,
                         onMapReady: () => setState(() => _mapReady = true),
                         // A manual drag/pinch (hasGesture) means the person
@@ -429,7 +459,7 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                             icon: Icons.remove,
                             onPressed: () => _mapController.move(
                               _mapController.camera.center,
-                              (_mapController.camera.zoom - 1).clamp(1, 8),
+                              (_mapController.camera.zoom - 1).clamp(0, 8),
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -442,11 +472,11 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                           ),
                           const SizedBox(height: 6),
                           _MapToolButton(
-                            icon: _following
-                                ? Icons.gps_fixed
-                                : Icons.gps_not_fixed,
-                            onPressed: () =>
-                                setState(() => _following = !_following),
+                            icon: Icons.public,
+                            onPressed: () {
+                              setState(() => _following = false);
+                              _mapController.fitCamera(_worldFit);
+                            },
                           ),
                         ],
                       ),

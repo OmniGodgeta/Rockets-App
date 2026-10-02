@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/update_checker.dart';
 
 import 'theme.dart';
 import '../../features/rockets/rockets_screen.dart';
@@ -64,6 +65,8 @@ class _RootShellState extends State<RootShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => UpdateChecker.check(context));
     _screens = [
       RocketsScreen(
           onMenuPressed: () => _scaffoldKey.currentState?.openDrawer()),
