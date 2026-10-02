@@ -37,6 +37,9 @@ class IssNotificationService {
     _initialized = true;
   }
 
+  /// When the scheduled alert is for, so the ISS screen can show it.
+  static DateTime? scheduledPassStart;
+
   /// Recomputes the next ISS pass over the user's current location and
   /// (re)schedules the flyover notification for a few minutes before it,
   /// replacing any previously scheduled one. Does nothing if the setting is
@@ -56,31 +59,43 @@ class IssNotificationService {
       if (!status.isGranted) return;
 
       final position = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.medium),
-      );
+        locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 15)),
+      ).catchError((_) async =>
+          await Geolocator.getLastKnownPosition() ??
+          (throw Exception('no location')));
 
       final satelliteRepository = SatelliteRepository();
       final iss = await satelliteRepository.fetchIssSatellite();
-      final nextPass = OrbitUtils.calculateNextPass(
+      // A VISIBLE pass (dark sky, ISS sunlit, 10+ deg up), not merely
+      // "above the horizon", which used to alert for daytime passes you
+      // can't see. Visible passes come in multi-day windows with gaps of a
+      // week or more, hence the 14-day search.
+      final pass = OrbitUtils.calculateNextVisiblePass(
         iss,
         position.latitude,
         position.longitude,
         position.altitude / 1000,
+        range: const Duration(days: 14),
       );
-      if (nextPass == null) return;
+      if (pass == null) return;
+      scheduledPassStart = pass.start;
 
       await _initialize();
+      await _notifications.cancel(_notificationId);
 
       final alertTime = tz.TZDateTime.from(
-          nextPass.subtract(const Duration(minutes: 5)), tz.local);
+          pass.start.subtract(const Duration(minutes: 5)), tz.local);
       final now = tz.TZDateTime.now(tz.local);
       if (alertTime.isBefore(now)) return;
 
+      final minutes = (pass.duration.inSeconds / 60).ceil();
       await _notifications.zonedSchedule(
         _notificationId,
-        'ISS Flyover Soon!',
-        'The International Space Station will be visible overhead in about 5 minutes.',
+        'ISS visible in 5 minutes',
+        'Look up: the ISS will cross your sky for about $minutes min, '
+            'up to ${pass.maxElevationDeg.round()}° above the horizon.',
         alertTime,
         const NotificationDetails(
           android: AndroidNotificationDetails(

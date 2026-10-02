@@ -1,5 +1,40 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.3] - 2026-10-02
+
+### Fixed
+
+- **ISS Live Now: the ISS was in the wrong place, and the "red lines
+  everywhere".** Two stacked bugs in the orbit math. (1) The orbital
+  library's time-since-epoch is in seconds, but its propagator wants
+  minutes, so every position was computed 60x too far along the orbit. The
+  93-minute path became ~60 orbits of scribble. (2) Its date conversion is
+  a whole day off in some months, October included. Both fixed in
+  `OrbitUtils`, so the marker, path, next-pass time and compass are all
+  correct now. Checked against wheretheiss.at's live position: 0.00 deg
+  error. `test/orbit_utils_test.dart` guards it.
+- ISS Live Now no longer spins forever. CelesTrak sometimes hangs, so there's
+  a 12 s timeout, a fallback source (wheretheiss.at) and the last orbit
+  saved on the device. Waiting for a GPS fix no longer blocks the map.
+- Weather Radar: clouds froze when zoomed in past level 7 (the radar
+  provider's limit). Tiles are now upscaled from level 7.
+- Aurora Forecast dark mode is actually readable.
+- Rocket Scales: Starship V3 was 150 m. It's ~124.4 m (V2 123.1 m). The
+  tallest bars no longer overflow their labels.
+
+### Added
+
+- **ISS: "Notify me when visible"** on the ISS screen. Alerts 5 min before a
+  pass you can actually see: dark sky, ISS in sunlight, at least 10 deg up.
+  It used to fire for any pass above the horizon, including daytime ones.
+  The screen shows the next visible pass (when, how high, how long).
+- Rocket Scales: real transparent side-view diagrams for 11 rockets and the
+  human, drawn to scale, with credits (info button). Long March 5, Atlas V,
+  H3, Delta IV Heavy and Starship V2 still use photos; no verified
+  transparent diagram exists for them.
+- ISS Live Now: stats panel restyled to match Scale of the Universe, plus a
+  map legend explaining the line.
+
 ## [v1.2.2] - 2026-09-26
 
 ### Fixed

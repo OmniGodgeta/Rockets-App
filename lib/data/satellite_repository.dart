@@ -24,21 +24,74 @@ class SatelliteRepository {
   /// (CATNR=25544), rather than the full active-satellite catalog (thousands
   /// of entries) used elsewhere - the ISS Live Now screen only needs this one
   /// satellite.
+  ///
+  /// CelesTrak is intermittently slow: on 2026-10-02 this exact query hung
+  /// for 20 s+ while the full catalog answered, and with no timeout the
+  /// screen spun forever. So: CelesTrak with a timeout, then wheretheiss.at's
+  /// copy of the same TLE, then the last good TLE saved on the device (a TLE
+  /// stays usable for days, so a cached one still places the ISS correctly).
   Future<Satellite> fetchIssSatellite() async {
-    final response = await http.get(Uri.parse(
-        'https://celestrak.org/NORAD/elements/gp.php?CATNR=$_issCatalogNumber&FORMAT=tle'));
-    if (response.statusCode != 200) {
-      throw Exception('Failed to fetch ISS TLE: HTTP ${response.statusCode}');
+    const timeout = Duration(seconds: 12);
+    try {
+      final response = await http
+          .get(Uri.parse(
+              'https://celestrak.org/NORAD/elements/gp.php?CATNR=$_issCatalogNumber&FORMAT=tle'))
+          .timeout(timeout);
+      if (response.statusCode == 200) {
+        final lines = response.body
+            .split('\n')
+            .map((l) => l.trim())
+            .where((l) => l.isNotEmpty)
+            .toList();
+        if (lines.length >= 3) return await _saveIss(lines[0], lines[1], lines[2]);
+      }
+    } catch (e) {
+      debugPrint('ISS TLE: CelesTrak failed ($e), trying wheretheiss.at');
     }
-    final lines = response.body
-        .split('\n')
-        .map((l) => l.trim())
-        .where((l) => l.isNotEmpty)
-        .toList();
-    if (lines.length < 3) {
-      throw Exception('Unexpected ISS TLE response');
+    try {
+      final response = await http
+          .get(Uri.parse(
+              'https://api.wheretheiss.at/v1/satellites/$_issCatalogNumber/tles'))
+          .timeout(timeout);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final l1 = body['line1'] as String?;
+        final l2 = body['line2'] as String?;
+        if (l1 != null && l2 != null) {
+          return await _saveIss(
+              (body['header'] as String?) ?? 'ISS (ZARYA)', l1, l2);
+        }
+      }
+    } catch (e) {
+      debugPrint('ISS TLE: wheretheiss.at failed ($e), trying cache');
     }
-    return Satellite.fromTle(lines[0], _issCatalogNumber, lines[1], lines[2]);
+    final cached = (await _issBox())?.get('tle');
+    if (cached != null) {
+      final parts = cached.split('\n');
+      if (parts.length == 3) {
+        return Satellite.fromTle(
+            parts[0], _issCatalogNumber, parts[1], parts[2]);
+      }
+    }
+    throw Exception('Could not reach any ISS orbit source');
+  }
+
+  Future<Satellite> _saveIss(String name, String line1, String line2) async {
+    await (await _issBox())?.put('tle', '$name\n$line1\n$line2');
+    return Satellite.fromTle(name, _issCatalogNumber, line1, line2);
+  }
+
+  /// Last good ISS TLE, in its own box: _cacheBox is cleared on every catalog
+  /// refresh. Opened on demand (several callers never run init(), e.g. ISS
+  /// Live Now and the notification service) and null if Hive isn't ready,
+  /// in which case the cache is simply skipped.
+  Future<Box<String>?> _issBox() async {
+    try {
+      return await Hive.openBox<String>('iss_tle');
+    } catch (e) {
+      debugPrint('ISS TLE cache unavailable: $e');
+      return null;
+    }
   }
 
   Future<List<Satellite>> fetchActiveSatellites({bool useCache = true}) async {

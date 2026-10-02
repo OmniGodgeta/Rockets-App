@@ -7,9 +7,12 @@ import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../app/theme.dart';
+import '../../data/iss_notification_service.dart';
 import '../../data/satellite_repository.dart';
+import '../../data/settings_repository.dart';
 import '../../models/satellite_model.dart';
 import '../../utils/orbit_utils.dart';
+import '../../utils/wikipedia_thumbnail.dart';
 import 'compass_screen.dart';
 
 /// "ISS Live Now" - the current ISS position on a live map plus a real-time
@@ -34,6 +37,12 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   Position? _userLocation;
   Map<String, double>? _issPosition;
   DateTime? _nextPass;
+  IssPass? _nextVisiblePass;
+  bool _locationFailed = false;
+  bool _alertsOn = false;
+  bool _alertsBusy = false;
+  final _settings = SettingsRepository();
+  Timer? _passTimer;
   String? _error;
   bool _loading = true;
   List<LatLng> _trackFuture = [];
@@ -44,6 +53,13 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   void initState() {
     super.initState();
     _initialize();
+    _settings.init().then((_) {
+      if (mounted) setState(() => _alertsOn = _settings.issPassAlertsEnabled);
+    });
+    // Pass predictions only change slowly; recomputing them every 5 s with
+    // the marker wasted battery. Every 5 min is plenty.
+    _passTimer =
+        Timer.periodic(const Duration(minutes: 5), (_) => _computePasses());
     _refreshTimer =
         Timer.periodic(const Duration(seconds: 5), (_) => _updatePosition());
   }
@@ -51,14 +67,18 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _passTimer?.cancel();
     super.dispose();
   }
 
   Future<void> _initialize() async {
     try {
       _iss = await _repository.fetchIssSatellite();
-      await _resolveUserLocation();
       _updatePosition();
+      // Not awaited: the map and stats only need the ISS. Location just adds
+      // the next-pass time, and a GPS fix can take ages (or never come
+      // indoors / on an emulator), which used to keep the spinner up forever.
+      unawaited(_resolveUserLocation());
     } catch (e) {
       if (mounted) setState(() => _error = 'Could not load ISS data: $e');
     } finally {
@@ -73,15 +93,27 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
         status = await Permission.location.request();
       }
       if (status.isGranted) {
-        final position = await Geolocator.getCurrentPosition(
-          locationSettings:
-              const LocationSettings(accuracy: LocationAccuracy.medium),
-        );
+        Position? position;
+        try {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.medium,
+                timeLimit: Duration(seconds: 10)),
+          );
+        } catch (e) {
+          // No fresh fix (indoors, GPS off): the last known position is
+          // easily good enough for pass predictions.
+          position = await Geolocator.getLastKnownPosition();
+          if (position == null) rethrow;
+        }
         if (mounted) setState(() => _userLocation = position);
+        _computePasses();
+        return;
       }
     } catch (e) {
       debugPrint('IssLiveNowScreen: could not resolve user location: $e');
     }
+    if (mounted) setState(() => _locationFailed = true);
   }
 
   void _updatePosition() {
@@ -106,16 +138,40 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
       );
     }
 
-    final userLoc = _userLocation;
-    if (userLoc != null) {
-      final nextPass = OrbitUtils.calculateNextPass(
-        iss,
-        userLoc.latitude,
-        userLoc.longitude,
-        userLoc.altitude / 1000,
-      );
-      if (mounted) setState(() => _nextPass = nextPass);
-    }
+  }
+
+  void _computePasses() {
+    final iss = _iss;
+    final loc = _userLocation;
+    if (iss == null || loc == null || !mounted) return;
+    final altKm = loc.altitude / 1000;
+    setState(() {
+      _nextPass = OrbitUtils.calculateNextPass(
+          iss, loc.latitude, loc.longitude, altKm);
+      _nextVisiblePass = OrbitUtils.calculateNextVisiblePass(
+          iss, loc.latitude, loc.longitude, altKm,
+          range: const Duration(days: 14));
+    });
+  }
+
+  Future<void> _toggleAlerts() async {
+    final on = !_alertsOn;
+    setState(() {
+      _alertsOn = on;
+      _alertsBusy = true;
+    });
+    await _settings.setIssPassAlertsEnabled(on);
+    await IssNotificationService().refreshSchedule();
+    if (!mounted) return;
+    setState(() => _alertsBusy = false);
+    final when = IssNotificationService.scheduledPassStart;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(!on
+          ? 'ISS alerts off'
+          : when != null
+              ? "You'll be alerted 5 min before the ISS is visible (${_formatWhen(when)})"
+              : "Alerts on. No visible pass in the next 14 days yet; we'll check again each time the app opens."),
+    ));
   }
 
   /// Ground track: current position forward through one full orbit only
@@ -172,18 +228,47 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
     return earthRadiusKm * centralAngle * 1000;
   }
 
-  String _formatNextPass() {
-    final pass = _nextPass;
-    if (pass == null) {
-      return _userLocation == null
-          ? 'Enable location to see'
-          : 'No pass in next 24h';
+  String _formatNextVisible() {
+    if (_userLocation == null) {
+      return _locationFailed ? 'Location unavailable' : 'Finding your location…';
     }
-    final diff = pass.difference(DateTime.now().toUtc());
-    if (diff.inMinutes <= 0) return 'Overhead now!';
-    if (diff.inHours > 0) return 'In ${diff.inHours}h ${diff.inMinutes % 60}m';
-    return 'In ${diff.inMinutes}m';
+    final pass = _nextVisiblePass;
+    if (pass == null) return 'None in the next 14 days';
+    return _formatWhen(pass.start);
   }
+
+  String? _visibleDetail() {
+    final pass = _nextVisiblePass;
+    if (pass == null) return null;
+    final minutes = (pass.duration.inSeconds / 60).ceil();
+    return 'Up to ${pass.maxElevationDeg.round()}° high · about $minutes min';
+  }
+
+  String? _aboveHorizonDetail() {
+    final pass = _nextPass;
+    if (pass == null) return null;
+    final diff = pass.difference(DateTime.now().toUtc());
+    if (diff.inMinutes <= 0) return 'Above your horizon now (not necessarily visible)';
+    final h = diff.inHours, m = diff.inMinutes % 60;
+    return 'Next above the horizon: in ${h > 0 ? '${h}h ' : ''}${m}m (daylight passes can\'t be seen)';
+  }
+
+  static String _formatWhen(DateTime t) {
+    final l = t.toLocal();
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dayDiff = DateTime(l.year, l.month, l.day).difference(today).inDays;
+    final day = dayDiff == 0
+        ? 'Today'
+        : dayDiff == 1
+            ? 'Tomorrow'
+            : '${days[l.weekday - 1]} ${l.day} ${months[l.month - 1]}';
+    final hh = l.hour.toString().padLeft(2, '0'), mm = l.minute.toString().padLeft(2, '0');
+    return '$day, $hh:$mm';
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -275,8 +360,8 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                                 in _splitAtAntimeridian(_trackFuture))
                               Polyline(
                                 points: segment,
-                                color: Colors.redAccent.withValues(alpha: 0.7),
-                                strokeWidth: 2,
+                                color: Colors.redAccent.withValues(alpha: 0.85),
+                                strokeWidth: 2.5,
                               ),
                           ],
                         ),
@@ -297,6 +382,35 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                           ],
                         ),
                       ],
+                    ),
+                    // Says what the line is: users read a bare red line as
+                    // "all the previous and future orbits".
+                    Positioned(
+                      left: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppTheme.background.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.surfaceBorder),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                                width: 18,
+                                height: 3,
+                                color: Colors.redAccent),
+                            const SizedBox(width: 8),
+                            const Text('Path for the next 90 min',
+                                style: TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 11)),
+                          ],
+                        ),
+                      ),
                     ),
                     Positioned(
                       right: 8,
@@ -345,63 +459,143 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
           child: Container(
             width: double.infinity,
             color: AppTheme.background,
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        label: 'LATITUDE',
-                        value: pos != null
-                            ? '${pos['lat']!.toStringAsFixed(2)}°'
-                            : '—',
+            // Same visual language as Scale of the Universe: circular
+            // Wikipedia badge, headline name, accent readout pill on a
+            // bordered dark card, secondary caption, then bordered cards.
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const WikipediaThumbnail(
+                          wikipediaTitle: 'International_Space_Station',
+                          size: 56),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('International Space Station',
+                                style:
+                                    AppTheme.headline.copyWith(fontSize: 20)),
+                            const SizedBox(height: 2),
+                            const Text('Live position · updates every 5 s',
+                                style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 11)),
+                          ],
+                        ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.surfaceBorder),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                        label: 'LONGITUDE',
-                        value: pos != null
-                            ? '${pos['lon']!.toStringAsFixed(2)}°'
-                            : '—',
+                    child: Column(
+                      children: [
+                        const Text('NEXT VISIBLE PASS',
+                            style: TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5)),
+                        const SizedBox(height: 4),
+                        Text(_formatNextVisible(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: AppTheme.accent,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700)),
+                        if (_visibleDetail() != null) ...[
+                          const SizedBox(height: 2),
+                          Text(_visibleDetail()!,
+                              style: const TextStyle(
+                                  color: AppTheme.textPrimary, fontSize: 12)),
+                        ],
+                        if (_aboveHorizonDetail() != null) ...[
+                          const SizedBox(height: 4),
+                          Text(_aboveHorizonDetail()!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 10)),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatTile(
+                          label: 'LATITUDE',
+                          value: pos != null
+                              ? '${pos['lat']!.toStringAsFixed(2)}°'
+                              : '—',
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _StatTile(
-                        label: 'ALTITUDE',
-                        value: pos != null
-                            ? '${pos['alt']!.toStringAsFixed(0)} km'
-                            : '—',
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatTile(
+                          label: 'LONGITUDE',
+                          value: pos != null
+                              ? '${pos['lon']!.toStringAsFixed(2)}°'
+                              : '—',
+                        ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _StatTile(
+                          label: 'ALTITUDE',
+                          value: pos != null
+                              ? '${pos['alt']!.toStringAsFixed(0)} km'
+                              : '—',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: _alertsBusy ? null : _toggleAlerts,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.accent,
+                      side: BorderSide(
+                          color: _alertsOn
+                              ? AppTheme.accent
+                              : AppTheme.surfaceBorder),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _StatTile(
-                          label: 'NEXT PASS OVER YOU',
-                          value: _formatNextPass()),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _iss == null
-                      ? null
-                      : () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => CompassScreen(satellite: _iss!),
+                    icon: Icon(_alertsOn
+                        ? Icons.notifications_active
+                        : Icons.notifications_none),
+                    label: Text(_alertsBusy
+                        ? 'FINDING THE NEXT VISIBLE PASS…'
+                        : _alertsOn
+                            ? 'ALERTS ON · TAP TO TURN OFF'
+                            : 'NOTIFY ME WHEN VISIBLE'),
+                  ),
+                  const SizedBox(height: 10),
+                  ElevatedButton.icon(
+                    onPressed: _iss == null
+                        ? null
+                        : () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    CompassScreen(satellite: _iss!),
+                              ),
                             ),
-                          ),
-                  icon: const Icon(Icons.explore),
-                  label: const Text('TRACK WITH COMPASS'),
-                ),
-              ],
+                    icon: const Icon(Icons.explore),
+                    label: const Text('TRACK WITH COMPASS'),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -419,7 +613,7 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(8),
@@ -427,21 +621,22 @@ class _StatTile extends StatelessWidget {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5)),
-          const SizedBox(height: 4),
-          Text(value,
+          Text(label,
               style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700)),
+                  color: AppTheme.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(value,
+                style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700)),
+          ),
         ],
       ),
     );

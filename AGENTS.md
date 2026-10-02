@@ -38,6 +38,29 @@ active roadmap only.
   re-investigate from scratch** (check `value.error`'s actual code via a
   debug print, don't guess).
 
+### Status 2026-10-02 (v1.2.3): all four items below are DONE
+
+Audited and finished by Claude Code. The local agent's attempts at #3/#4 were
+unverified and didn't work, #1/#2 weren't really done, and it had left
+`flutter analyze --fatal-infos` failing on main. Details in CHANGELOG v1.2.3.
+The items are kept below for history only. Don't redo them.
+
+**Orbit math: don't undo these** (`lib/utils/orbit_utils.dart`):
+- `orbit.tPlusEpoch()` returns SECONDS; `getPosition()` wants MINUTES. Always `/ 60.0`.
+- Never use `Julian.fromFullDate`: it's a day off in some months. Use `_julian()`.
+- Never reuse an `Orbit` across steps: it carries state and gives wrong positions.
+- `test/orbit_utils_test.dart` pins a live reference fix. If it fails, the math broke.
+
+**Still worth doing** (not on the operator's list):
+- Package id is still Flutter's placeholder `com.example.rockets`. Changing it
+  means a fresh install (it's a different app to Android), so ask first.
+- Releases are signed with this PC's `~/.android/debug.keystore` (no
+  key.properties). Updates only install over each other if every release
+  uses that same key. Verify with `apksigner verify --print-certs`.
+- On a real phone, check that the ISS "next visible pass" readout shows up
+  (the emulator never gave a GPS fix). Pass math is unit-checked: Ottawa,
+  Oct 13-16 morning passes.
+
 ### Still open - pick these up
 
 1. **Rocket Scales: real PNG images with no background.**
