@@ -39,10 +39,12 @@ class _SatelliteDetailSheetState extends State<SatelliteDetailSheet> {
       _favoriteRepository.init(),
       _settingsRepository.init(),
     ]).then((_) {
-      if (mounted) setState(() {
+      if (mounted) {
+        setState(() {
         _favoritesReady = true;
         _settingsReady = true;
       });
+      }
     });
   }
 

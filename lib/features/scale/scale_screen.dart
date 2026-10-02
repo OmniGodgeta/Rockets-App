@@ -44,12 +44,14 @@ class _ScaleScreenState extends State<ScaleScreen> {
     if (meters < 1e-6) return '${(meters * 1e6).toStringAsFixed(2)} µm';
     if (meters < 1e-3) return '${(meters * 1e3).toStringAsFixed(2)} mm';
     if (meters < 1) return '${(meters * 100).toStringAsFixed(1)} cm';
-    if (meters < 1000)
+    if (meters < 1000) {
       return '${meters.toStringAsFixed(meters < 10 ? 2 : 1)} m';
+    }
     if (meters < 9.461e15) return '${(meters / 1000).toStringAsFixed(0)} km';
     final lightYears = meters / 9.461e15;
-    if (lightYears < 1000)
+    if (lightYears < 1000) {
       return '${lightYears.toStringAsFixed(2)} light-years';
+    }
     return '${lightYears.toStringAsExponential(2)} light-years';
   }
 

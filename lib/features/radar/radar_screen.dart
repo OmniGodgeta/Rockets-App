@@ -179,6 +179,13 @@ class _RadarScreenState extends State<RadarScreen> {
                 TileLayer(
                   key: ValueKey(_radarTileUrlTemplate),
                   urlTemplate: _radarTileUrlTemplate,
+                  // RainViewer's free tier only has real radar up to z7.
+                  // Past that, every frame returns the same "zoom not
+                  // supported" placeholder tile (checked 2026-10-02: z8/z10
+                  // tiles were byte-identical across frames, z3-z7 differed),
+                  // which is exactly "the clouds don't move". Upscale z7
+                  // instead of requesting tiles that don't exist.
+                  maxNativeZoom: 7,
                   userAgentPackageName: 'com.rockets.app',
                 ),
               MarkerLayer(

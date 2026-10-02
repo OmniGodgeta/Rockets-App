@@ -23,22 +23,20 @@ class _AuroraScreenState extends State<AuroraScreen> {
       ..setBackgroundColor(AppTheme.background)
       ..setNavigationDelegate(NavigationDelegate(
         onPageFinished: (String url) {
-          // Inject dark mode CSS to override spaceweather.gov's light theme.
+          // Dark mode for spaceweather.gov's light page: invert the whole
+          // document, then invert media back so the aurora maps keep their
+          // real colours. The earlier per-element override (body/table/a
+          // colours) left the header and the "Current Space Weather
+          // Conditions" box white and turned their text light grey on white,
+          // which is less readable than no dark mode at all. Checked both by
+          // rendering the live page in headless Chromium (2026-10-02).
           const String css = '''
-            html, body {
-              background-color: #121212 !important;
-              color: #e0e0e0 !important;
+            html {
+              filter: invert(1) hue-rotate(180deg) !important;
+              background: #fff !important;
             }
-            a {
-              color: #bb86fc !important;
-            }
-            table, th, td {
-              background-color: #1e1e1e !important;
-              color: #e0e0e0 !important;
-              border-color: #333 !important;
-            }
-            img {
-              filter: brightness(.8) contrast(1.2);
+            img, video, canvas, iframe, [style*="background-image"] {
+              filter: invert(1) hue-rotate(180deg) !important;
             }
           ''';
           _controller.runJavaScript('''
