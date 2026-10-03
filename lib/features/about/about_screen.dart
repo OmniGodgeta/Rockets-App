@@ -34,7 +34,7 @@ class AboutScreen extends StatelessWidget {
           _buildSourceRow('Spaceflight News API', 'news'),
           _buildSourceRow('NASA/JPL Solar System Scope', 'Solar System & Universe tabs'),
           _buildSourceRow('GalacticResource', 'Galaxy tab'),
-          _buildSourceRow('Zoom Earth', 'weather radar'),
+          _buildSourceRow('MyRadar app', 'weather radar (opens the app)'),
         ],
       ),
     );

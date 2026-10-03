@@ -1,11 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
+import '../../utils/external_apps.dart';
 import 'package:intl/intl.dart';
 
 import '../../app/theme.dart';
 import '../../data/favorite_repository.dart';
 import '../../models/launch.dart';
-import '../../features/radar/radar_screen.dart';
 import '../../utils/rocket_countdown.dart';
 import 'livestream_screen.dart';
 
@@ -43,17 +44,8 @@ class _LaunchDetailScreenState extends State<LaunchDetailScreen> {
     );
   }
 
-  Future<void> _openRadar() async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RadarScreen(
-          lat: launch.padLatitude,
-          lon: launch.padLongitude,
-        ),
-      ),
-    );
-  }
+  /// Weather at the pad: hands off to MyRadar (the in-app radar was removed).
+  Future<void> _openRadar() => ExternalApps.openOrStore(ExternalApps.myRadar);
 
   @override
   Widget build(BuildContext context) {

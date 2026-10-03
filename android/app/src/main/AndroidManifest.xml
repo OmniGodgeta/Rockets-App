@@ -55,6 +55,7 @@
         <package android:name="com.nicedayapps.iss_free"/>
         <package android:name="com.noctuasoftware.stellarium_free"/>
         <package android:name="com.noctuasoftware.stellarium"/>
+        <package android:name="com.acmeaom.android.myradar"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

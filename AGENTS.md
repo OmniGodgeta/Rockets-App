@@ -22,6 +22,20 @@ active roadmap only.
 > radar you did add a button to go farther in time but the clouds do not
 > move at all, we can't track the weather if it's not tracking.
 
+### v1.2.6 (2026-10-03, operator asks): radar -> MyRadar, Star Map tracking
+
+- Weather Radar = `ExternalApps.openOrStore(ExternalApps.myRadar)`
+  (`com.acmeaom.android.myradar`, in the manifest `<queries>`). The in-app
+  radar screen was deleted: don't bring it back.
+- Star Map (`stellarium_screen.dart`): injected JS drives Stellarium Web's
+  `window._stel.core.yaw/pitch` from `deviceorientationabsolute` (yaw =
+  compass bearing, 0 = N, 90 = E, verified on the engine). **Chromium only
+  sends orientation events to a focused page**, and a WebView isn't focused
+  until touched: `ExternalApps.focusWebViews()` (MainActivity) fixes that.
+  Without it tracking silently does nothing until the first tap. Verified on
+  the emulator by moving its virtual sensors. No "GET APP" button; the
+  cookie banner is auto-clicked. Geolocation is granted to the WebView.
+
 ### YouTube playback (v1.2.5, 2026-10-02): read this before touching it
 
 `ed2512c`'s diagnosis below was incomplete: playback still failed on every

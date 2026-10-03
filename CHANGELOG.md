@@ -1,5 +1,21 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.6] - 2026-10-03
+
+### Changed
+
+- **Weather Radar opens the MyRadar app.** The built-in radar was broken, so
+  it's gone: Weather Radar (menu, and the radar button on a launch) opens
+  MyRadar directly, no dialog. Without MyRadar it goes straight to its Play
+  Store page.
+- **Star Map: auto tracking, on by default.** The sky follows where you point
+  the phone (compass + tilt), like Stellarium Mobile's sensor mode. The
+  compass button at the top right turns it off to move the sky by hand.
+- **Star Map: no download prompts.** The "GET APP" button is gone, and the
+  site's cookie banner is dismissed automatically.
+- Star Map uses your phone's GPS for your location instead of a rough guess
+  from your internet connection.
+
 ## [v1.2.5] - 2026-10-02
 
 ### Fixed

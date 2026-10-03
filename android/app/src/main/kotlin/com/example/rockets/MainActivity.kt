@@ -1,6 +1,9 @@
 package com.example.rockets
 
 import android.content.Intent
+import android.view.View
+import android.view.ViewGroup
+import android.webkit.WebView
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -27,8 +30,29 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(null)
                     }
+                    // Chromium only sends device-orientation events to a
+                    // focused page, and a WebView doesn't get focus until it's
+                    // touched; the star map's auto tracking needs it at once.
+                    "focusWebViews" -> {
+                        window.decorView.post {
+                            focusWebViews(window.decorView)
+                            result.success(null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    private fun focusWebViews(view: View) {
+        if (view is WebView) {
+            view.isFocusable = true
+            view.isFocusableInTouchMode = true
+            view.requestFocus()
+            return
+        }
+        if (view is ViewGroup) {
+            for (i in 0 until view.childCount) focusWebViews(view.getChildAt(i))
+        }
     }
 }

@@ -16,6 +16,27 @@ class ExternalApps {
     'com.noctuasoftware.stellarium_free',
   ];
 
+  /// MyRadar (ACME AtronOmatic): the Weather Radar menu entry opens it.
+  static const myRadar = ['com.acmeaom.android.myradar'];
+
+  /// Opens the first installed app from [packages], or straight to the first
+  /// one's Play Store page if none is installed. No dialog either way.
+  static Future<void> openOrStore(List<String> packages) async {
+    if (await open(packages)) return;
+    await openStore(packages.first);
+  }
+
+  /// Gives on-screen WebViews input focus (see MainActivity.focusWebViews).
+  static Future<void> focusWebViews() async {
+    try {
+      await _channel.invokeMethod<void>('focusWebViews');
+    } on MissingPluginException {
+      // Not Android.
+    } on PlatformException {
+      // Best effort.
+    }
+  }
+
   /// Opens the first installed app from [packages]. Returns false if none
   /// are installed (or not on Android).
   static Future<bool> open(List<String> packages) async {

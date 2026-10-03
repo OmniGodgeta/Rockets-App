@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
-import '../../features/radar/radar_screen.dart';
 import '../../features/about/about_screen.dart';
 import '../../features/aurora/aurora_screen.dart';
 import '../../features/rocket_scale/rocket_scale_screen.dart';
@@ -12,6 +11,7 @@ import '../../features/history/rocket_history_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/space_live/space_live_screen.dart';
 import '../../features/stellarium/stellarium_screen.dart';
+import '../utils/external_apps.dart';
 import '../../data/settings_repository.dart';
 
 /// The hamburger drawer only holds things that aren't already one of the six
@@ -73,10 +73,7 @@ class AppMenuDrawer extends StatelessWidget {
               ),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RadarScreen()),
-                );
+                ExternalApps.openOrStore(ExternalApps.myRadar);
               },
             ),
             ListTile(

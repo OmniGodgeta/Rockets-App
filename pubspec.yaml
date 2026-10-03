@@ -1,7 +1,7 @@
 name: rockets
 description: Worldwide rocket launch tracker, satellite tracking, solar system explorer, and space news.
 publish_to: 'none'
-version: 1.2.5+21
+version: 1.2.6+22
 
 environment:
   sdk: ^3.5.0
