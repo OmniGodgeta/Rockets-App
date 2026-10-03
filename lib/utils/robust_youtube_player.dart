@@ -33,7 +33,7 @@ class RobustYoutubePlayer extends StatefulWidget {
   });
 
   /// Identifies this app to YouTube; must be an https origin.
-  static const referer = 'https://com.example.rockets/';
+  static const referer = 'https://com.shadowswords.rockets/';
 
   @override
   State<RobustYoutubePlayer> createState() => _RobustYoutubePlayerState();

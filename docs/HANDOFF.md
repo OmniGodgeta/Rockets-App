@@ -2,6 +2,16 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.2.9 (2026-10-03) — package id `com.shadowswords.rockets`
+
+The operator said to change it and reinstall. `applicationId` and the
+Kotlin package moved off `com.example.rockets`. YouTube's Referer moved
+with it (`RobustYoutubePlayer.referer`). This does not install over 1.2.8.
+Uninstall the old app, then install this release. Same signing key.
+
+Rocket-scale diagrams and the ISS panel style shipped in v1.2.8; H3 and
+Starship V2 still use Wikipedia photos.
+
 ## v1.2.8 (2026-10-03) — remaining rocket diagrams, ISS panel style
 
 The "still open" list in `AGENTS.md` was stale. Transparent diagrams for
@@ -30,10 +40,6 @@ session stopped during the emulator check. Details and the data-shape
 warnings are in `AGENTS.md` under v1.2.7. Verified on the emulator, and
 `flutter analyze --fatal-infos` plus `flutter test` (10 tests) were clean
 before the tag.
-
-The package id (`com.example.rockets`) must not be changed without asking.
-Rocket-scale diagrams and the ISS panel style shipped in v1.2.8; H3 and
-Starship V2 still use Wikipedia photos.
 
 ## v1.2.2 (2026-09-26) — the real ISS tracking bug: a longitude-range bug, not a rendering bug
 

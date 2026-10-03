@@ -1,4 +1,4 @@
-package com.example.rockets
+package com.shadowswords.rockets
 
 import android.content.Intent
 import android.view.View

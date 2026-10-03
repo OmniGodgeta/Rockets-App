@@ -62,10 +62,11 @@ video. The player's own error screen said **152-4**
 (youtube_player_iframe's wrapper) and **153** (bare embed URL): YouTube rejects
 embeds that don't identify the embedding app. `RobustYoutubePlayer` now loads
 `https://www.youtube.com/embed/<id>` directly in a WebView with
-`Referer: https://com.example.rockets/`, verified on the emulator (live ISS
-stream and Rocket History play, fullscreen works). Remove the Referer and it
-breaks again. youtube_player_iframe was dropped. If the package id ever
-changes, update `RobustYoutubePlayer.referer` with it.
+`Referer: https://com.shadowswords.rockets/`. Playback was verified on the
+emulator when the Referer was `https://com.example.rockets/` (live ISS stream
+and Rocket History, fullscreen). Remove the Referer and it breaks again.
+youtube_player_iframe was dropped. The Referer must stay the same string as
+`applicationId`.
 
 ### Already fixed directly (do not redo)
 
@@ -97,8 +98,6 @@ The items are kept below for history only. Don't redo them.
 - `test/orbit_utils_test.dart` pins a live reference fix. If it fails, the math broke.
 
 **Still worth doing** (not on the operator's list):
-- Package id is still Flutter's placeholder `com.example.rockets`. Changing it
-  means a fresh install (it's a different app to Android), so ask first.
 - Releases are signed with this PC's `~/.android/debug.keystore` (no
   key.properties). Updates only install over each other if every release
   uses that same key. Verify with `apksigner verify --print-certs`.
@@ -106,10 +105,15 @@ The items are kept below for history only. Don't redo them.
   (the emulator never gave a GPS fix). Pass math is unit-checked: Ottawa,
   Oct 13-16 morning passes.
 
+### Package id (v1.2.9)
+
+`com.shadowswords.rockets`. Android treats this as a different app from
+`com.example.rockets`, so 1.2.8 will not update in place. Uninstall the old
+copy, then install 1.2.9. Same debug signing key as the earlier releases.
+YouTube's Referer is `https://com.shadowswords.rockets/`.
+
 ### Still open
 
-- Package id is still `com.example.rockets` (see above). Do not change it
-  without a yes.
 - **H3** and **Starship + Super Heavy (V2)** on Rocket Scales still use the
   Wikipedia photo. Rechecked 2026-10-03: Commons has no transparent
   side-view diagram for either (H3 is photos and a logo; Starship's only

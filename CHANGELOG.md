@@ -1,5 +1,14 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.9] - 2026-10-03
+
+### Changed
+
+- **New Android package id: `com.shadowswords.rockets`.** This does not
+  replace the 1.2.8 install. Uninstall the old Rockets app, then install
+  this one. Space Live and Rocket History identify the app to YouTube with
+  the new package id.
+
 ## [v1.2.8] - 2026-10-03
 
 ### Changed
