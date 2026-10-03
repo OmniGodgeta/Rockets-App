@@ -1,5 +1,20 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.7] - 2026-10-03
+
+### Added
+
+- **Launch Map.** Every upcoming launch on a world map, one marker per pad,
+  from the launch list the app already keeps. Blue markers launch within 7
+  days. Tap a pad for the flights there, then a flight for its page. The
+  top-right button switches between the next 30 days and everything upcoming.
+- **People in Space.** Who is up right now, grouped by station and by the
+  flight that took them there, with photos. Starman (the mannequin in the
+  Tesla Roadster) is a footnote, not counted as crew. Cached for an hour so
+  it doesn't burn the shared launch-list rate limit.
+- **The Moon.** Tonight's phase, how much is lit, and the next new and full
+  moons. Computed on the phone, so it works with no network.
+
 ## [v1.2.6] - 2026-10-03
 
 ### Changed

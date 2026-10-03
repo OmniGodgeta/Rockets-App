@@ -10,6 +10,9 @@ import '../../features/apod/apod_screen.dart';
 import '../../features/history/rocket_history_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/space_live/space_live_screen.dart';
+import '../../features/launch_map/launch_map_screen.dart';
+import '../../features/moon/moon_screen.dart';
+import '../../features/people_in_space/people_in_space_screen.dart';
 import '../../features/stellarium/stellarium_screen.dart';
 import '../utils/external_apps.dart';
 import '../../data/settings_repository.dart';
@@ -133,6 +136,50 @@ class AppMenuDrawer extends StatelessWidget {
                 final navigator = Navigator.of(context);
                 navigator.pop();
                 StellariumScreen.open(navigator);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.public, color: AppTheme.textPrimary),
+              title: const Text(
+                'Launch Map',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LaunchMapScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.groups_outlined,
+                  color: AppTheme.textPrimary),
+              title: const Text(
+                'People in Space',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PeopleInSpaceScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_3_outlined,
+                  color: AppTheme.textPrimary),
+              title: const Text(
+                'The Moon',
+                style: TextStyle(color: AppTheme.textPrimary),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MoonScreen()),
+                );
               },
             ),
             ListTile(

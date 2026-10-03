@@ -22,6 +22,25 @@ active roadmap only.
 > radar you did add a button to go farther in time but the clouds do not
 > move at all, we can't track the weather if it's not tracking.
 
+### v1.2.7 (2026-10-03): Launch Map, People in Space, The Moon
+
+Menu items, in that order, under Star Map. Left uncommitted when the previous
+session died mid-emulator-check; finished and checked on the emulator
+2026-10-03 (12 launches / 10 pads, pad sheet opens; 14 people, ISS 11 and
+Tiangong 3, photos load; last-quarter moon draws the lit half on the left).
+
+- Launch Map reuses `LaunchRepository.fetchUpcoming()` (no extra API call)
+  and the same Esri imagery tiles as ISS Live Now. Pads come from
+  `Launch.padLatitude` / `padLongitude`, which the API returns as strings.
+- People in Space is `AstronautRepository` → Launch Library 2
+  `/astronaut/?in_space=true`, Hive-cached one hour. Agency objects have
+  `name` and no `abbrev`; the short names are a table in `astronaut.dart`.
+  Station is inferred from the latest flight name (Shenzhou → Tiangong,
+  otherwise ISS). `test/astronaut_test.dart` pins that shape.
+- The Moon is `lib/utils/moon_phase.dart` (Meeus, no network).
+  `test/moon_phase_test.dart` pins it to the 2024-04-08 and 2025-03-14
+  eclipses, within 2 hours.
+
 ### v1.2.6 (2026-10-03, operator asks): radar -> MyRadar, Star Map tracking
 
 - Weather Radar = `ExternalApps.openOrStore(ExternalApps.myRadar)`

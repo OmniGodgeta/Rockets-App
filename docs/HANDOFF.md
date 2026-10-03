@@ -2,6 +2,18 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.2.7 (2026-10-03) — Launch Map, People in Space, The Moon
+
+Shipped. Three menu screens that were written and left uncommitted when a
+session stopped during the emulator check. Details and the data-shape
+warnings are in `AGENTS.md` under v1.2.7. Verified on the emulator, and
+`flutter analyze --fatal-infos` plus `flutter test` (10 tests) were clean
+before the tag.
+
+Still open, unchanged, and listed in `AGENTS.md`: transparent rocket-scale
+PNGs, ISS Live Now visual pass, and the package id (`com.example.rockets`)
+which must not be changed without asking.
+
 ## v1.2.2 (2026-09-26) — the real ISS tracking bug: a longitude-range bug, not a rendering bug
 
 After v1.2.1 shipped a round of ISS Live Now polish (footprint circle, map
