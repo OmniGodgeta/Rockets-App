@@ -1,27 +1,23 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../app/theme.dart';
 
-/// A YouTube embed that never gets stuck on a dead/broken player. Wraps
-/// youtube_player_iframe, falling back to a plain "Open in YouTube" button
-/// only on the IFrame API's own numbered errors (`controller.listen`,
-/// `value.error` - the real, video-specific failure signal: 2, 5, 100, 101,
-/// 105, 150).
+/// A YouTube video that plays inside the app.
 ///
-/// An earlier version of this widget ALSO treated any raw
-/// `onWebResourceError` as fatal. That was itself the bug the operator hit
-/// ("both sections only show Open in YouTube, can't play here") - a
-/// WebView loading YouTube's embed page routinely hits benign sub-resource
-/// errors (blocked ad/analytics requests, a missing favicon, etc.)
-/// completely unrelated to whether the video itself plays, and treating
-/// every one of those as fatal meant the fallback fired almost
-/// immediately, every time, regardless of whether the video ever actually
-/// had a chance to play. Removed - only `value.error` triggers the
-/// fallback now.
+/// Loads YouTube's own embed page straight into a WebView, sending the app as
+/// the HTTP Referer. YouTube refuses embeds that don't identify the embedding
+/// app: without the Referer every video fails with "Video player configuration
+/// error" (153), and youtube_player_iframe's HTML wrapper, which sends
+/// youtube.com itself as the origin, fails with 152-4. That was why Space Live
+/// and Rocket History always fell back to "Open in YouTube" (re-diagnosed
+/// 2026-10-02 on an emulator, reading the player's own error text).
+///
+/// Falls back to an "Open in YouTube" button only when the embed page itself
+/// shows a YouTube error.
 class RobustYoutubePlayer extends StatefulWidget {
   final String videoId;
   final bool autoPlay;
@@ -36,44 +32,89 @@ class RobustYoutubePlayer extends StatefulWidget {
     this.startSeconds = 0,
   });
 
+  /// Identifies this app to YouTube; must be an https origin.
+  static const referer = 'https://com.example.rockets/';
+
   @override
   State<RobustYoutubePlayer> createState() => _RobustYoutubePlayerState();
 }
 
 class _RobustYoutubePlayerState extends State<RobustYoutubePlayer> {
-  late final YoutubePlayerController _controller;
-  late final StreamSubscription<YoutubePlayerValue> _valueSubscription;
+  late final WebViewController _controller;
   bool _failed = false;
+  bool _fullscreenOpen = false;
+
+  Uri get _embedUri =>
+      Uri.https('www.youtube.com', '/embed/${widget.videoId}', {
+        'playsinline': '1',
+        'rel': '0',
+        if (widget.autoPlay) 'autoplay': '1',
+        if (widget.startSeconds > 0) 'start': '${widget.startSeconds.round()}',
+      });
 
   @override
   void initState() {
     super.initState();
-    _controller = YoutubePlayerController(
-      params: const YoutubePlayerParams(
-        showControls: true,
-        showFullscreenButton: true,
-        playsInline: true,
-      ),
-    );
-    _valueSubscription = _controller.listen((value) {
-      if (value.error != YoutubeError.none && mounted) {
-        setState(() => _failed = true);
-      }
-    });
-    if (widget.autoPlay) {
-      _controller.loadVideoById(
-          videoId: widget.videoId, startSeconds: widget.startSeconds);
-    } else {
-      _controller.cueVideoById(
-          videoId: widget.videoId, startSeconds: widget.startSeconds);
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.black)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) => _checkForError(),
+        // Links inside the player (title, "Watch on YouTube", channel) open
+        // the YouTube app instead of replacing the player.
+        onNavigationRequest: (req) {
+          final uri = Uri.parse(req.url);
+          if (!req.isMainFrame || uri.path.startsWith('/embed/')) {
+            return NavigationDecision.navigate;
+          }
+          launchUrl(uri, mode: LaunchMode.externalApplication);
+          return NavigationDecision.prevent;
+        },
+      ));
+    final platform = _controller.platform;
+    if (platform is AndroidWebViewController) {
+      platform.setMediaPlaybackRequiresUserGesture(false);
+      platform.setCustomWidgetCallbacks(
+        onShowCustomWidget: _showFullscreen,
+        onHideCustomWidget: () {
+          if (_fullscreenOpen && mounted) Navigator.of(context).pop();
+        },
+      );
     }
+    _controller.loadRequest(_embedUri,
+        headers: const {'Referer': RobustYoutubePlayer.referer});
   }
 
-  @override
-  void dispose() {
-    _valueSubscription.cancel();
-    _controller.close();
-    super.dispose();
+  /// YouTube's fullscreen button hands us the video as a native view.
+  Future<void> _showFullscreen(Widget video, void Function() onHidden) async {
+    _fullscreenOpen = true;
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    await SystemChrome.setPreferredOrientations(
+        [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    if (!mounted) return;
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => Scaffold(backgroundColor: Colors.black, body: video),
+    ));
+    // Reached by the back button or by YouTube's own exit-fullscreen.
+    _fullscreenOpen = false;
+    onHidden();
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await SystemChrome.setPreferredOrientations([]);
+  }
+
+  /// YouTube renders its errors in-page (`.ytp-error`); give it a few seconds
+  /// to initialise, then look.
+  Future<void> _checkForError() async {
+    await Future<void>.delayed(const Duration(seconds: 4));
+    if (!mounted || _failed) return;
+    try {
+      final hasError = await _controller.runJavaScriptReturningResult(
+          "document.querySelector('.ytp-error') !== null");
+      if (hasError.toString() == 'true' && mounted) {
+        setState(() => _failed = true);
+      }
+    } catch (_) {}
   }
 
   Future<void> _openInYoutube() async {
@@ -117,7 +158,7 @@ class _RobustYoutubePlayerState extends State<RobustYoutubePlayer> {
     }
     return AspectRatio(
       aspectRatio: widget.aspectRatio,
-      child: YoutubePlayer(controller: _controller),
+      child: WebViewWidget(controller: _controller),
     );
   }
 }

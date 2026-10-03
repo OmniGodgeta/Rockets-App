@@ -1,5 +1,24 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.5] - 2026-10-02
+
+### Fixed
+
+- **Space Live and Rocket History play inside the app.** Both always showed
+  "Couldn't play this video here". The real cause, read from YouTube's own
+  error screen on an emulator: YouTube now refuses embedded players that don't
+  identify the app embedding them (errors 152-4 and 153). The player now loads
+  YouTube's embed page directly and identifies the app, so the live ISS stream
+  and the history video play here. Fullscreen works (landscape), and links in
+  the player (title, "Watch on YouTube") open the YouTube app.
+- **Gallery showed NASA logos instead of pictures.** Two separate breakages:
+  NASA's picture-of-the-day feed has returned the NASA logo for every day
+  since late September (APOD moved to science.nasa.gov); those entries are now
+  skipped and reappear by themselves once NASA fixes the feed. And the NASA
+  Image Library search matched nothing at all (it requires every word, and
+  the search asked for five at once); it now searches "galaxy" and "hubble"
+  separately. One failing source no longer blanks the whole Gallery.
+
 ## [v1.2.4] - 2026-10-02
 
 ### Added

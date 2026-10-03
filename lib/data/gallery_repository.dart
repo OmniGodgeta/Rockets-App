@@ -55,6 +55,10 @@ class GalleryRepository {
     final images = body
         .cast<Map<String, dynamic>>()
         .where((e) => e['media_type'] == 'image')
+        // Since APOD moved to science.nasa.gov (late Sep 2026) the API has
+        // returned "NASA Science" + the NASA logo for every day. Drop those;
+        // real entries come back by themselves once NASA fixes the feed.
+        .where((e) => !'${e['url']}'.contains('nasa-logo'))
         .map((e) => GalleryImage(
               title: e['title'] as String? ?? 'Untitled',
               date: DateTime.parse(e['date'] as String),
@@ -68,16 +72,30 @@ class GalleryRepository {
     return images;
   }
 
-  /// Fetches a page of recent imagery from the NASA Image and Video Library,
-  /// searching for major mission/observatory names so results stay relevant
-  /// rather than pulling in unrelated archive photos.
+  /// Fetches a page of imagery from the NASA Image and Video Library. One
+  /// search per topic, merged: the API ANDs every word of `q`, so the old
+  /// single "hubble webb telescope nebula galaxy" query matched nothing.
+  static const _libraryTopics = ['galaxy', 'hubble'];
+
   Future<List<GalleryImage>> fetchImageLibrary({int page = 1}) async {
-    final uri = Uri.parse(
-      'https://images-api.nasa.gov/search'
-      '?q=hubble%20webb%20telescope%20nebula%20galaxy'
-      '&media_type=image'
-      '&page=$page',
-    );
+    final pages = await Future.wait(
+        _libraryTopics.map((q) => _fetchLibraryTopic(q, page)));
+    final seen = <String>{};
+    final images = [
+      for (final list in pages)
+        for (final img in list)
+          if (seen.add(img.imageUrl)) img,
+    ];
+    images.sort((a, b) => b.date.compareTo(a.date));
+    return images;
+  }
+
+  Future<List<GalleryImage>> _fetchLibraryTopic(String query, int page) async {
+    final uri = Uri.https('images-api.nasa.gov', '/search', {
+      'q': query,
+      'media_type': 'image',
+      'page': '$page',
+    });
     final response = await http.get(uri);
     if (response.statusCode != 200) {
       throw Exception('NASA Image Library HTTP ${response.statusCode}');
@@ -107,7 +125,6 @@ class GalleryRepository {
         source: 'NASA Image Library',
       ));
     }
-    images.sort((a, b) => b.date.compareTo(a.date));
     return images;
   }
 }

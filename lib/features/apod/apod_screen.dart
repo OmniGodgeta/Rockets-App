@@ -51,11 +51,20 @@ class _ApodScreenState extends State<ApodScreen> {
     if (_loading) return;
     setState(() => _loading = true);
     try {
+      // Either source may fail on its own (APOD's shared DEMO_KEY is rate
+      // limited); show whatever loaded, and only error when both fail.
+      Object? firstError;
+      Future<List<GalleryImage>> soft(Future<List<GalleryImage>> f) =>
+          f.catchError((Object e) {
+            firstError ??= e;
+            return <GalleryImage>[];
+          });
       final results = await Future.wait([
-        _repository.fetchApod(endDate: _apodCursor, days: 8),
-        _repository.fetchImageLibrary(page: _libraryPage),
+        soft(_repository.fetchApod(endDate: _apodCursor, days: 8)),
+        soft(_repository.fetchImageLibrary(page: _libraryPage)),
       ]);
       final combined = [...results[0], ...results[1]];
+      if (combined.isEmpty && firstError != null) throw firstError!;
       combined.sort((a, b) => b.date.compareTo(a.date));
       if (mounted) {
         setState(() {

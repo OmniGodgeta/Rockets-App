@@ -22,6 +22,18 @@ active roadmap only.
 > radar you did add a button to go farther in time but the clouds do not
 > move at all, we can't track the weather if it's not tracking.
 
+### YouTube playback (v1.2.5, 2026-10-02): read this before touching it
+
+`ed2512c`'s diagnosis below was incomplete: playback still failed on every
+video. The player's own error screen said **152-4**
+(youtube_player_iframe's wrapper) and **153** (bare embed URL): YouTube rejects
+embeds that don't identify the embedding app. `RobustYoutubePlayer` now loads
+`https://www.youtube.com/embed/<id>` directly in a WebView with
+`Referer: https://com.example.rockets/`, verified on the emulator (live ISS
+stream and Rocket History play, fullscreen works). Remove the Referer and it
+breaks again. youtube_player_iframe was dropped. If the package id ever
+changes, update `RobustYoutubePlayer.referer` with it.
+
 ### Already fixed directly (do not redo)
 
 - **Space Live / Rocket History playback** - the actual bug was
