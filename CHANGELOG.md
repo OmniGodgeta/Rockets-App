@@ -1,5 +1,18 @@
 # Rocket Launcher App - Changelog
 
+## [v1.2.8] - 2026-10-03
+
+### Changed
+
+- **Rocket Size Comparison.** Long March 5, Atlas V, and Delta IV Heavy now
+  use side-view diagrams with no background, same as the other rockets.
+  H3 and Starship V2 still use their Wikipedia photo: there is no
+  transparent side-view drawing of either on Wikimedia Commons.
+- **ISS Live Now.** The panel under the map matches Scale of the Universe:
+  the station photo is centered, the next pass is the blue readout, and
+  latitude, longitude, and altitude use that same blue on dark bordered
+  cards. The map and the orbit line are unchanged.
+
 ## [v1.2.7] - 2026-10-03
 
 ### Added

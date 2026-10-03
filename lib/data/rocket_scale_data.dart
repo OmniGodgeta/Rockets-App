@@ -76,12 +76,14 @@ const List<RocketScale> rocketScaleData = [
     heightMeters: 57.0,
     diameterMeters: 5.0,
     wikipediaTitle: 'Long_March_5',
+    assetImage: 'assets/rockets/long_march_5.png',
   ),
   RocketScale(
     name: 'Atlas V',
     heightMeters: 63.0,
     diameterMeters: 3.8,
     wikipediaTitle: 'Atlas_V',
+    assetImage: 'assets/rockets/atlas_v.png',
   ),
   RocketScale(
     name: 'Ariane 6',
@@ -115,6 +117,7 @@ const List<RocketScale> rocketScaleData = [
     heightMeters: 72.0,
     diameterMeters: 5.0,
     wikipediaTitle: 'Delta_IV_Heavy',
+    assetImage: 'assets/rockets/delta_iv_heavy.png',
   ),
   RocketScale(
     name: 'SLS Block 1',

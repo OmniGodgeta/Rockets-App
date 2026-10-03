@@ -2,6 +2,27 @@
 
 **Read this first if you're picking up work on this app.**
 
+## v1.2.8 (2026-10-03) — remaining rocket diagrams, ISS panel style
+
+The "still open" list in `AGENTS.md` was stale. Transparent diagrams for
+most rockets, the aurora invert, and the radar removal had already shipped.
+This pass finished the two items that were actually left.
+
+- **Rocket Scales.** Long March 5, Atlas V, and Delta IV Heavy now use
+  bundled transparent side views (sources in `assets/rockets/CREDITS.md`).
+  Each file was opened and checked: real alpha, the whole vehicle, no
+  labels or grid left in the crop. H3 and Starship V2 stay on the Wikipedia
+  photo. Commons has no transparent side view for them (the only Starship
+  stack drawing is the FAA V3 image, already used for Starship V3).
+- **ISS Live Now.** The panel under the map now follows Scale of the
+  Universe: centered circular photo, headline, accent "next pass" pill,
+  latitude/longitude/altitude in accent on bordered cards. Map buttons use
+  the same bordered surface. Orbit math, the footprint, and the track were
+  not touched.
+
+Not checked on a phone. Diagrams were checked as images; the panel change
+is layout only.
+
 ## v1.2.7 (2026-10-03) — Launch Map, People in Space, The Moon
 
 Shipped. Three menu screens that were written and left uncommitted when a
@@ -10,9 +31,9 @@ warnings are in `AGENTS.md` under v1.2.7. Verified on the emulator, and
 `flutter analyze --fatal-infos` plus `flutter test` (10 tests) were clean
 before the tag.
 
-Still open, unchanged, and listed in `AGENTS.md`: transparent rocket-scale
-PNGs, ISS Live Now visual pass, and the package id (`com.example.rockets`)
-which must not be changed without asking.
+The package id (`com.example.rockets`) must not be changed without asking.
+Rocket-scale diagrams and the ISS panel style shipped in v1.2.8; H3 and
+Starship V2 still use Wikipedia photos.
 
 ## v1.2.2 (2026-09-26) — the real ISS tracking bug: a longitude-range bug, not a rendering bug
 

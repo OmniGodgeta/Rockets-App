@@ -106,82 +106,33 @@ The items are kept below for history only. Don't redo them.
   (the emulator never gave a GPS fix). Pass math is unit-checked: Ottawa,
   Oct 13-16 morning passes.
 
-### Still open - pick these up
+### Still open
 
-1. **Rocket Scales: real PNG images with no background.**
-   `lib/features/rocket_scale/rocket_scale_screen.dart` currently fetches
-   each rocket's photo via `WikipediaThumbnail` (`lib/utils/
-   wikipedia_thumbnail.dart`, `circular: false, fit: BoxFit.contain`) inside
-   an accurately-scaled height box - the box sizing is correct and should
-   NOT change. The problem is the *source image*: a Wikipedia infobox photo
-   is an arbitrary rectangular photograph (often on a white/sky background,
-   often not even the whole rocket top-to-bottom), so `BoxFit.contain`
-   leaves a lot of the height-accurate box empty. The operator wants a real
-   PNG with a transparent (no) background per rocket instead, so the
-   drawing fills the box the way a proper side-view rocket diagram would.
-   This needs REAL image URLs, not invented ones - the established failure
-   mode on this exact project is a model inventing a plausible-sounding
-   URL that 404s. Before wiring anything in, verify every URL actually
-   resolves to an image (`curl -s -o /dev/null -w "%{http_code} %{content_type}\n" <url>`
-   must show `200` and an image content-type) - do this for all ~16
-   rockets in `lib/data/rocket_scale_data.dart` before writing any Dart.
-   Good sources to check: Wikimedia Commons often has separate
-   transparent-background technical diagrams distinct from the infobox
-   photo (search on commons.wikimedia.org, not just the Wikipedia article's
-   own infobox image) - check each file's actual page to confirm it's a
-   PNG with real transparency, not a photo with a white background (those
-   won't look right in a dark-themed app either). If a genuinely
-   transparent, correctly-shaped image can't be found and verified for a
-   given rocket, leave that one on the current photo-in-a-box rather than
-   wiring in an invented or unverified URL.
-2. **Apply the Scale-of-the-Universe UI style to ISS Live Now.** The
-   operator explicitly likes `lib/features/scale/scale_screen.dart`'s look
-   (dark cards, `AppTheme.surface`/`AppTheme.surfaceBorder` bordered boxes,
-   `WikipediaThumbnail` circular badges, the accent-colored size readout
-   pill) and wants that visual language applied to
-   `lib/features/satellites/iss_live_now_screen.dart`. This is a styling/
-   layout pass, not a rebuild - keep the real map, the footprint circle,
-   the follow logic, and the trajectory line from the current
-   implementation (all real, working, recently fixed - see
-   `docs/HANDOFF.md`'s v1.2.2 entry for why the trajectory math is
-   correctness-critical and must not be touched here). Focus this task on
-   the STATS PANEL below the map (`_StatTile` widgets for LATITUDE/
-   LONGITUDE/ALTITUDE/NEXT PASS) and general chrome (card borders, spacing,
-   accent color usage) to match scale_screen.dart's visual style, not the
-   map itself.
-3. **Aurora Forecast: dark theme if feasible.**
-   `lib/features/aurora/aurora_screen.dart` is a raw WebView of
-   spaceweather.gov's own page, which has its own light theme baked into
-   its HTML - there is no clean native way to override another site's
-   styling. The operator said "if not it's okay" - so try ONE reasonable
-   approach (inject a dark-mode CSS override via
-   `_controller.runJavaScript(...)` after the page loads, in
-   `setNavigationDelegate`'s `onPageFinished` callback - look at how other
-   screens in this app use `WebViewController` for the right pattern) and
-   if the result looks broken/unreadable rather than genuinely improved,
-   leave the screen as-is and say so in the commit message rather than
-   shipping a half-working CSS hack.
-4. **Weather Radar: the animate button doesn't actually move the clouds.**
-   `lib/features/radar/radar_screen.dart`'s `TileLayer` for the radar
-   overlay (around line 179, `urlTemplate: _radarTileUrlTemplate`) has no
-   explicit `key`. `_radarTileUrlTemplate` is a getter that changes with
-   `_frameIndex`, and the play button (added in commit `5b0d23a`) does
-   correctly advance `_frameIndex` via `setState` - but if the visible
-   tiles never update, the most likely cause is flutter_map/Flutter's own
-   image caching treating this as the "same" layer since only a prop
-   changed, not the widget's identity. **First thing to try**: give that
-   `TileLayer` `key: ValueKey(_radarTileUrlTemplate)` so Flutter fully
-   reconstructs it (and its tile cache) on every frame change, and confirm
-   the fix by actually checking a change in what's rendered (e.g.
-   temporarily log `_radarTileUrlTemplate` on each frame change with
-   `debugPrint` and confirm it's really a different URL each time, not just
-   confirm the key change compiles). If that alone doesn't fix it, check
-   whether flutter_map's own tile cache (`TileLayer`'s `tileProvider` /
-   any FMTC-style disk cache) needs an explicit "don't cache across
-   different urlTemplates" setting - do not guess, check the installed
-   flutter_map version's actual source
-   (`~/.pub-cache/hosted/pub.dev/flutter_map-*/lib/src/layer/tile_layer/`)
-   for how it decides whether to refetch.
+- Package id is still `com.example.rockets` (see above). Do not change it
+  without a yes.
+- **H3** and **Starship + Super Heavy (V2)** on Rocket Scales still use the
+  Wikipedia photo. Rechecked 2026-10-03: Commons has no transparent
+  side-view diagram for either (H3 is photos and a logo; Starship's only
+  transparent stack drawing is the FAA V3 sheet, which is already
+  `starship_v3.png`). Do not invent a URL or generate a stand-in.
+
+### Closed - do not redo
+
+1. **Rocket Scales diagrams** (v1.2.8). Every other rocket uses a bundled
+   transparent side view in `assets/rockets/` (credits in that folder's
+   `CREDITS.md` and the info button). The height box math must not change.
+   Long March 5, Atlas V (500-series, cropped from `Atlas V family.png`),
+   and Delta IV Heavy were the last three added. `test/rocket_scale_assets_test.dart`
+   checks each PNG actually has an alpha channel.
+2. **ISS Live Now uses the Scale of the Universe panel style** (v1.2.8).
+   The panel under the map is a centered circular badge, wide-tracked
+   headline, accent readout pill, and bordered stat cards with accent
+   values. Map zoom buttons use the same bordered surface. Do not touch
+   the trajectory math (`docs/HANDOFF.md` v1.2.2).
+3. **Aurora Forecast dark theme** already shipped: the WebView inverts the
+   page and inverts images back (`aurora_screen.dart`). Leave it.
+4. **Weather Radar is gone** (v1.2.6). The menu opens MyRadar. Do not
+   bring `radar_screen.dart` back.
 
 ### Process for all of the above
 

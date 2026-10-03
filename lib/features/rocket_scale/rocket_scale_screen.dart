@@ -62,7 +62,8 @@ class _RocketScaleScreenState extends State<RocketScaleScreen> {
                 final scaleFactor = drawHeight / tallest;
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   itemCount: visible.length,
                   itemBuilder: (context, index) => _RocketBar(
                     rocket: visible[index],
@@ -130,8 +131,11 @@ const _credits = [
   ('Soyuz-2', 'David S. F. Portree / NASA', 'Public domain, recoloured'),
   ('Ariane 5', 'Sylvain Comte', 'CC BY-SA 3.0'),
   ('Space Shuttle', 'NASA', 'Public domain, cropped'),
+  ('Long March 5', 'Shujianyang', 'CC BY-SA 4.0, trimmed'),
+  ('Atlas V', 'Wikimedia Commons', 'Public domain, cropped'),
   ('Ariane 6', 'ChiZeroOne', 'CC BY-SA 4.0, cropped'),
   ('Falcon 9 / Falcon Heavy', 'WDGraham', 'Attribution, cropped'),
+  ('Delta IV Heavy', 'Tomáš Hruška', 'Public domain, cropped'),
   ('SLS', 'NASA/cbush', 'Public domain'),
   ('New Glenn', 'XYZtSpace', 'CC0'),
   ('Saturn V', 'charner1963', 'CC0'),
@@ -153,8 +157,7 @@ void _showCredits(BuildContext context) {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5)),
           const SizedBox(height: 4),
-          const Text(
-              'Rockets without a diagram use their Wikipedia photo.',
+          const Text('Rockets without a diagram use their Wikipedia photo.',
               style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
           const SizedBox(height: 12),
           for (final (what, who, licence) in _credits)
@@ -197,7 +200,8 @@ class _RocketBar extends StatelessWidget {
     // stays a visible sliver instead of a literal few-pixel line - still
     // dramatically smaller than the rockets, just not to the point of
     // disappearing.
-    final drawHeight = (rocket.heightMeters * scaleFactor).clamp(14.0, double.infinity);
+    final drawHeight =
+        (rocket.heightMeters * scaleFactor).clamp(14.0, double.infinity);
     const laneWidth = 96.0;
 
     return Padding(

@@ -146,7 +146,6 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
         _mapController.camera.zoom,
       );
     }
-
   }
 
   void _computePasses() {
@@ -155,8 +154,8 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
     if (iss == null || loc == null || !mounted) return;
     final altKm = loc.altitude / 1000;
     setState(() {
-      _nextPass = OrbitUtils.calculateNextPass(
-          iss, loc.latitude, loc.longitude, altKm);
+      _nextPass =
+          OrbitUtils.calculateNextPass(iss, loc.latitude, loc.longitude, altKm);
       _nextVisiblePass = OrbitUtils.calculateNextVisiblePass(
           iss, loc.latitude, loc.longitude, altKm,
           range: const Duration(days: 14));
@@ -239,7 +238,9 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
 
   String _formatNextVisible() {
     if (_userLocation == null) {
-      return _locationFailed ? 'Location unavailable' : 'Finding your location…';
+      return _locationFailed
+          ? 'Location unavailable'
+          : 'Finding your location…';
     }
     final pass = _nextVisiblePass;
     if (pass == null) return 'None in the next 14 days';
@@ -257,7 +258,9 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
     final pass = _nextPass;
     if (pass == null) return null;
     final diff = pass.difference(DateTime.now().toUtc());
-    if (diff.inMinutes <= 0) return 'Above your horizon now (not necessarily visible)';
+    if (diff.inMinutes <= 0) {
+      return 'Above your horizon now (not necessarily visible)';
+    }
     final h = diff.inHours, m = diff.inMinutes % 60;
     return 'Next above the horizon: in ${h > 0 ? '${h}h ' : ''}${m}m (daylight passes can\'t be seen)';
   }
@@ -265,7 +268,20 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
   static String _formatWhen(DateTime t) {
     final l = t.toLocal();
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dayDiff = DateTime(l.year, l.month, l.day).difference(today).inDays;
@@ -274,10 +290,10 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
         : dayDiff == 1
             ? 'Tomorrow'
             : '${days[l.weekday - 1]} ${l.day} ${months[l.month - 1]}';
-    final hh = l.hour.toString().padLeft(2, '0'), mm = l.minute.toString().padLeft(2, '0');
+    final hh = l.hour.toString().padLeft(2, '0'),
+        mm = l.minute.toString().padLeft(2, '0');
     return '$day, $hh:$mm';
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -430,14 +446,11 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                                width: 18,
-                                height: 3,
-                                color: Colors.redAccent),
+                                width: 18, height: 3, color: Colors.redAccent),
                             const SizedBox(width: 8),
                             const Text('Path for the next 90 min',
                                 style: TextStyle(
-                                    color: AppTheme.textPrimary,
-                                    fontSize: 11)),
+                                    color: AppTheme.textPrimary, fontSize: 11)),
                           ],
                         ),
                       ),
@@ -497,29 +510,22 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    children: [
-                      const WikipediaThumbnail(
-                          wikipediaTitle: 'International_Space_Station',
-                          size: 56),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('International Space Station',
-                                style:
-                                    AppTheme.headline.copyWith(fontSize: 20)),
-                            const SizedBox(height: 2),
-                            const Text('Live position · updates every 5 s',
-                                style: TextStyle(
-                                    color: AppTheme.textSecondary,
-                                    fontSize: 11)),
-                          ],
-                        ),
-                      ),
-                    ],
+                  // Same stack as Scale of the Universe: circular photo,
+                  // wide-tracked headline, then the accent readout pill.
+                  const Center(
+                    child: WikipediaThumbnail(
+                        wikipediaTitle: 'International_Space_Station',
+                        size: 72),
                   ),
+                  const SizedBox(height: 12),
+                  Text('International Space Station',
+                      textAlign: TextAlign.center,
+                      style: AppTheme.headline.copyWith(fontSize: 18)),
+                  const SizedBox(height: 4),
+                  const Text('Live position · updates every 5 s',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: AppTheme.textSecondary, fontSize: 11)),
                   const SizedBox(height: 14),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -555,8 +561,7 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                           Text(_aboveHorizonDetail()!,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                  color: AppTheme.textSecondary,
-                                  fontSize: 10)),
+                                  color: AppTheme.textSecondary, fontSize: 10)),
                         ],
                       ],
                     ),
@@ -617,8 +622,7 @@ class _IssLiveNowScreenState extends State<IssLiveNowScreen> {
                         ? null
                         : () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) =>
-                                    CompassScreen(satellite: _iss!),
+                                builder: (_) => CompassScreen(satellite: _iss!),
                               ),
                             ),
                     icon: const Icon(Icons.explore),
@@ -663,8 +667,8 @@ class _StatTile extends StatelessWidget {
             fit: BoxFit.scaleDown,
             child: Text(value,
                 style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 17,
+                    color: AppTheme.accent,
+                    fontSize: 18,
                     fontWeight: FontWeight.w700)),
           ),
         ],
@@ -712,8 +716,11 @@ class _MapToolButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppTheme.surface.withValues(alpha: 0.9),
-      shape: const CircleBorder(),
+      color: AppTheme.surface.withValues(alpha: 0.92),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(color: AppTheme.surfaceBorder),
+      ),
       child: IconButton(
         icon: Icon(icon, color: AppTheme.textPrimary, size: 20),
         onPressed: onPressed,
